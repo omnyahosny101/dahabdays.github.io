@@ -96,7 +96,8 @@ function Login() {
       await reload(); return setUser({ id: a.staffId, name: a.name || "Owner", role: a.role, via });
     }
     const ph = normPhone(id.phone), em = (id.email || "").trim().toLowerCase();
-    if ((ph && ph === normPhone(settings.ownerPhone)) || (em && em === (settings.ownerEmail || "").toLowerCase())) return setUser({ ...owner, via });
+    const list = (v?: string) => (v || "").split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
+    if ((ph && list(settings.ownerPhone).some((x) => normPhone(x) === ph)) || (em && list(settings.ownerEmail).some((x) => x.toLowerCase() === em))) return setUser({ ...owner, via });
     const s = staff.find((x) => (ph && normPhone(x.phone) === ph) || (em && (x.email || "").toLowerCase() === em));
     if (!s) return setErr(`${id.phone || id.email} doesn't have dashboard access. Ask the owner to add you in Team and roles.`);
     if (!s.active) return setErr("This account is switched off. Ask the owner to switch it back on.");
@@ -170,7 +171,7 @@ function Login() {
 
         {err && <p className="mt-3 text-red">{err}</p>}
         {!live && <div className="mt-5 rounded-2xl bg-sand p-3 text-sm text-ink/75">
-          <b>Try it:</b> {settings.ownerName || "The owner"} (owner, full access) signs in with <button className="font-semibold text-royal" dir="ltr" onClick={() => { setHow("phone"); setStep("enter"); setPhone(settings.ownerPhone || ""); }}>{settings.ownerPhone}</button>. After loading the showcase you can also try a limited role: <button className="font-semibold text-royal" onClick={() => { setHow("google"); setGmail("frontdesk.dahabdays@gmail.com"); }}>Front desk (demo)</button>.
+          <b>Try it:</b> {settings.ownerName || "The owner"} (owner, full access) signs in with <button className="font-semibold text-royal" dir="ltr" onClick={() => { setHow("phone"); setStep("enter"); setPhone((settings.ownerPhone || "").split(",")[0].trim()); }}>{(settings.ownerPhone || "").split(",")[0].trim()}</button>. After loading the showcase you can also try a limited role: <button className="font-semibold text-royal" onClick={() => { setHow("google"); setGmail("frontdesk.dahabdays@gmail.com"); }}>Front desk (demo)</button>.
           {how !== "pin" && <button className="mt-2 block text-xs font-semibold text-ink/50 underline" onClick={() => { setHow("pin"); setErr(""); }}>Use a PIN instead (preview only)</button>}
           {how === "pin" && <p className="mt-1 text-xs text-ink/50">Owner PIN: {settings.adminPin === "dahab" ? "dahab" : "set in Settings"}</p>}
         </div>}
@@ -666,8 +667,8 @@ function SettingsTab() {
       {user?.role === "owner" && <Card title="Owner sign-in">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="sm:col-span-2"><span className="label">Owner name</span><input className="input" value={s.ownerName || ""} onChange={f("ownerName")} /></label>
-          <label><span className="label">Owner mobile (SMS code)</span><input className="input" dir="ltr" type="tel" value={s.ownerPhone || ""} onChange={f("ownerPhone")} /></label>
-          <label><span className="label">Owner Gmail (Google sign-in)</span><input className="input" dir="ltr" type="email" value={s.ownerEmail || ""} onChange={f("ownerEmail")} placeholder="owner@gmail.com" /></label>
+          <label><span className="label">Owner mobile numbers (SMS code, separate with commas)</span><input className="input" dir="ltr" type="tel" value={s.ownerPhone || ""} onChange={f("ownerPhone")} /></label>
+          <label><span className="label">Owner Gmails (Google sign-in, separate with commas)</span><input className="input" dir="ltr" type="email" value={s.ownerEmail || ""} onChange={f("ownerEmail")} placeholder="owner@gmail.com" /></label>
           {backend?.mode !== "supabase" && <label><span className="label">Backup PIN (preview only)</span><input className="input" value={s.adminPin} onChange={f("adminPin")} /></label>}
         </div>
         <p className="mt-3 text-sm text-ink/60">The owner always has full access with this number or Gmail. Everyone else gets access in Team and roles.</p>

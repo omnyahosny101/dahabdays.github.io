@@ -1,12 +1,13 @@
 /* Guest self-service: manage booking, account with logbook and photos, blog / dive-site guides */
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ArrowRight, CalendarClock, Camera, Lock, LogOut, Plus, Search, XCircle } from "lucide-react";
+import { ArrowRight, CalendarClock, CalendarPlus, Camera, Lock, LogOut, MessageCircle, Plus, Search, XCircle } from "lucide-react";
 import { HandNote, Mark, Phase, RedTab, Stamp, Wave } from "../components/brand";
 import { Empty, Visual } from "../components/ui";
 import { useI18n } from "../lib/i18n";
-import { addDays, go, today, uid, useStore } from "../lib/store";
+import { addDays, balanceDue, go, paidAmount, today, uid, useStore } from "../lib/store";
 import type { Booking, LogEntry, Post } from "../lib/types";
 import { DEMO_GUEST } from "../lib/showcase";
+import { seedShowcase } from "./Showcase";
 
 const Page = ({ kicker, a, b, children }: { kicker: string; a: string; b: string; children: ReactNode }) => {
   const { t } = useI18n();
@@ -73,7 +74,8 @@ export function Manage() {
 
 /* ---------- Diver account: trips, logbook, photos ---------- */
 export function Account() {
-  const { backend, guestEmail, setGuestEmail, bookings, logbook, media, put, settings, cart, setCart } = useStore();
+  const store = useStore();
+  const { backend, guestEmail, setGuestEmail, bookings, logbook, media, put, settings, cart, setCart, services } = store;
   const { t, money } = useI18n();
   const [email, setEmail] = useState(""); const [sent, setSent] = useState(false); const [me, setMe] = useState<string | null>(guestEmail);
   useEffect(() => { if (backend?.currentEmail) backend.currentEmail().then((e) => { if (e) { setMe(e); setGuestEmail(e); } }); }, [backend]); // eslint-disable-line
@@ -84,6 +86,13 @@ export function Account() {
   const signOut = async () => { await backend?.signOut?.(); setMe(null); setGuestEmail(null); };
   const mine = useMemo(() => bookings.filter((b) => me && b.customer.email.toLowerCase() === me.toLowerCase()).sort((a, b) => (a.date < b.date ? 1 : -1)), [bookings, me]);
   const refs = new Set(mine.map((b) => b.ref));
+  const upcoming = mine.filter((b) => b.date >= today() && b.status !== "cancelled" && b.category !== "addon").sort((a, b) => (a.date + a.time < b.date + b.time ? -1 : 1));
+  const past = mine.filter((b) => !upcoming.includes(b) && b.category !== "addon");
+  const firstRef = upcoming.find((b) => b.date > today())?.ref || upcoming[0]?.ref;
+  const next = upcoming.filter((b) => b.ref === firstRef);
+  const days = next[0] ? Math.round((new Date(next[0].date + "T00:00").getTime() - new Date(today() + "T00:00").getTime()) / 86400000) : 0;
+  const nextAll = mine.filter((b) => b.ref === firstRef && b.status !== "cancelled");
+  const nextTotal = nextAll.reduce((a, b) => a + b.total, 0), nextPaid = nextAll.reduce((a, b) => a + paidAmount(b), 0), nextDue = nextAll.reduce((a, b) => a + balanceDue(b), 0);
   const diveDays = mine.filter((b) => (b.category === "course" || b.category === "fun") && b.status === "completed");
   const entries: LogEntry[] = [
     ...diveDays.map((b) => ({ id: "auto-" + b.id, email: me!, date: b.date, site: b.serviceName, depth: 0, minutes: 0, verified: true, bookingRef: b.ref })),
@@ -101,7 +110,7 @@ export function Account() {
           <p className="mt-2 text-ink/70">{backend?.signIn ? "We'll email you a one-tap sign-in link — no password." : "Use the email you booked with."}</p>
           <div className="mt-4 flex gap-2"><input className="input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} /><button className="btn-sea" onClick={signIn}>{t("Sign in")}</button></div>
           {sent && <p className="mt-3 font-semibold text-[#0b7a52]">Check your inbox for the sign-in link.</p>}
-          {backend?.mode !== "supabase" && <button className="btn mt-4 border-2 border-dashed border-sky/50 text-sm" onClick={() => { setMe(DEMO_GUEST.email); setGuestEmail(DEMO_GUEST.email); }}>View as {DEMO_GUEST.name} (demo)</button>}
+          {backend?.mode !== "supabase" && <button className="btn mt-4 border-2 border-dashed border-sky/50 text-sm" onClick={async () => { if (!bookings.some((b) => b.customer.email === DEMO_GUEST.email)) await seedShowcase(store); setMe(DEMO_GUEST.email); setGuestEmail(DEMO_GUEST.email); }}>View as {DEMO_GUEST.name} (demo)</button>}
         </div>
         <ul className="space-y-3 text-ink/75">{["Your trips and payment status", "A digital logbook — dives with us are stamped automatically", "Your photos and videos from the day", "Quick rebooking"].map((x, i) => <li key={x} className="flex gap-3"><Phase i={i} size={18} />{x}</li>)}</ul>
       </div>
@@ -113,9 +122,23 @@ export function Account() {
       <div className="-mt-4 space-y-6">
         <div className="flex justify-end"><button className="btn-ghost" onClick={signOut}><LogOut size={16} /> {t("Sign out")}</button></div>
 
+        {next.length > 0 && <section className="overflow-hidden rounded-[28px] bg-navy text-white shadow-card">
+          <div className="relative h-40 sm:h-52"><Visual scene="reef" url={services.find((s) => s.id === next[0].serviceId)?.mediaUrl} label={next[0].serviceName} /><span className="absolute inset-0 bg-gradient-to-t from-navy via-navy/30 to-transparent" />
+            <span className="absolute start-5 top-5 rounded-full bg-sun px-3 py-1 text-sm font-black text-navy">{days === 0 ? t("Today") : days === 1 ? t("Tomorrow") : `${t("In")} ${days} ${t("days")}`}</span></div>
+          <div className="space-y-4 p-6 sm:p-8">
+            <div><p className="text-sm font-bold uppercase tracking-widest text-sky">{t("Your next trip")} · {next[0].ref}</p><h2 className="mt-1 text-2xl font-black sm:text-3xl">{next.map((b) => b.serviceName).join(" + ")}</h2></div>
+            <ul className="space-y-2">{next.map((b) => <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white/10 px-4 py-3"><span><b>{b.serviceName}</b><span className="block text-sm text-white/70">{new Date(b.date + "T00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} · {b.time} · {b.people} {b.people === 1 ? "person" : "people"}</span></span><span className={`chip ${b.payment.status === "paid" ? "bg-[#1baf7a] text-white" : b.payment.status === "deposit" ? "bg-sun text-navy" : "bg-white/20 text-white"}`}>{b.payment.status === "deposit" ? t("Deposit paid") : b.payment.status === "paid" ? t("Paid") : t("Not paid yet")}</span></li>)}</ul>
+            <div className="grid grid-cols-3 gap-2 text-center"><div className="rounded-2xl bg-white/10 px-1.5 py-3"><p className="text-xs text-white/60">{t("Total")}</p><p className="price text-[14px] font-black leading-tight sm:text-lg">{money(nextTotal)}</p></div><div className="rounded-2xl bg-white/10 px-1.5 py-3"><p className="text-xs text-white/60">{t("Paid")}</p><p className="price text-[14px] font-black leading-tight text-[#5fe0b0] sm:text-lg">{money(nextPaid)}</p></div><div className="rounded-2xl bg-sun px-1.5 py-3 text-navy"><p className="text-xs font-semibold">{t("Due on arrival")}</p><p className="price text-[14px] font-black leading-tight sm:text-lg">{money(nextDue)}</p></div></div>
+            <p className="hand text-[22px] text-sun">{t("Meet us at the center 15 minutes early. Bring swimwear, a towel and sunscreen.")}</p>
+            <div className="flex flex-wrap gap-2"><button className="btn-coral" onClick={() => { try { sessionStorage.setItem("dd:demoRef", next[0].ref); } catch { /* */ } go("manage"); }}><CalendarClock size={16} /> {t("Reschedule or cancel")}</button>
+              <a className="btn-light" target="_blank" rel="noreferrer" href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent("Dahab Days: " + next[0].serviceName)}&dates=${next[0].date.replace(/-/g, "")}/${addDays(next[0].date, 1).replace(/-/g, "")}&details=${encodeURIComponent("Booking " + next[0].ref)}&location=${encodeURIComponent("Dahab Days Diving Center, Dahab")}`}><CalendarPlus size={16} /> {t("Add to calendar")}</a>
+              <a className="btn border-2 border-white/25 text-white" target="_blank" rel="noreferrer" href={`https://wa.me/${settings.whatsapp}?text=${encodeURIComponent(`Hi Dahab Days! About my booking ${next[0].ref}`)}`}><MessageCircle size={16} /> WhatsApp</a></div>
+          </div>
+        </section>}
+
         <section className="card p-6 sm:p-8">
           <h2 className="mb-4 text-2xl font-black">{t("Your trips")}</h2>
-          {mine.length ? <ul className="space-y-2">{mine.map((b, i) => <li key={b.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-foam p-4"><Phase i={i} size={18} /><span className="flex-1"><b>{b.serviceName}</b><span className="block text-sm text-ink/60">{b.date} · {b.ref} · {money(b.total)}</span></span><span className={`chip ${b.payment.status === "paid" ? "bg-[#1baf7a]/15 text-[#0b6b49]" : "bg-sand"}`}>{b.payment.status}</span></li>)}</ul> : <Empty>No trips yet. <a href="#book" className="font-semibold text-royal">Book your first dive</a>.</Empty>}
+          {mine.length ? <div className="space-y-6">{[[t("Coming up"), upcoming], [t("Past trips"), past]].map(([title, list]) => (list as Booking[]).length > 0 && <div key={title as string}><p className="mb-2 text-sm font-bold uppercase tracking-widest text-ink/50">{title as string}</p><ul className="space-y-2">{(list as Booking[]).map((b, i) => <li key={b.id} className="flex items-center gap-3 rounded-2xl bg-foam p-4"><Phase i={i} size={18} /><span className="min-w-0 flex-1"><b>{b.serviceName}</b><span className="block text-sm text-ink/60">{b.date} · {b.ref} · {money(b.total)}{b.status !== "cancelled" && balanceDue(b) > 0 ? ` · ${money(balanceDue(b))} ${t("due")}` : ""}</span></span><span className={`chip shrink-0 ${b.status === "cancelled" ? "bg-ink/10" : b.payment.status === "paid" ? "bg-[#1baf7a]/15 text-[#0b6b49]" : b.payment.status === "deposit" ? "bg-sun/40 text-navy" : "bg-sand"}`}>{b.status === "cancelled" ? (b.payment.status === "refunded" ? t("Refunded") : t("Cancelled")) : b.payment.status === "deposit" ? t("Deposit paid") : b.payment.status === "paid" ? t("Paid") : t("Not paid yet")}</span></li>)}</ul></div>)}</div> : <Empty>No trips yet. <a href="#book" className="font-semibold text-royal">Book your first dive</a>.</Empty>}
         </section>
 
         <section className="card p-6 sm:p-8">

@@ -6,24 +6,28 @@ import { buildShowcase, DEMO_GUEST } from "../lib/showcase";
 import { go, useStore } from "../lib/store";
 import type { Collection } from "../lib/backend";
 
+/** Puts the Mohamed Attar sample data into the store (used by the card and by the demo site on first visit) */
+export async function seedShowcase(store: ReturnType<typeof useStore>) {
+  const data = buildShowcase(store.services, store.settings);
+  for (const [col, docs] of Object.entries(data) as [Collection, { id: string }[]][]) {
+    for (const d of docs) if (col !== "staff" || !store.staff.some((s) => s.id === d.id)) await store.put(col, d);
+  }
+}
+
 export function ShowcaseCard({ openTab }: { openTab: (t: any) => void }) {
   const store = useStore();
-  const { bookings, put, remove, setGuestEmail } = store;
+  const { bookings, remove, setGuestEmail } = store;
   const [busy, setBusy] = useState(false);
   const loaded = bookings.some((b) => (b as any).showcase);
 
   const load = async () => {
-    setBusy(true);
-    const data = buildShowcase(store.services, store.settings);
-    for (const [col, docs] of Object.entries(data) as [Collection, { id: string }[]][]) {
-      for (const d of docs) if (col !== "staff" || !store.staff.some((s) => s.id === d.id)) await put(col, d);
-    }
-    setBusy(false);
+    setBusy(true); await seedShowcase(store); setBusy(false);
   };
   const clear = async () => {
     setBusy(true);
     const cols: Collection[] = ["bookings", "consents", "logbook", "media", "inventory", "expenses", "cashcloses", "promos", "staff", "customers"];
     for (const c of cols) for (const d of (store as any)[c] as any[]) if (d.showcase || String(d.id).startsWith("sc-") || d.id === DEMO_GUEST.email) await remove(c, d.id);
+    try { localStorage.setItem("dd:showcase-off", "1"); } catch { /* */ }
     setBusy(false);
   };
   const guest = (r: "account" | "manage") => { setGuestEmail(DEMO_GUEST.email); try { sessionStorage.setItem("dd:demoRef", "DD-ATTR4"); } catch { /* */ } go(r); };

@@ -34,8 +34,8 @@ create or replace function public.is_owner() returns boolean language sql stable
   select exists (select 1 from public.admins where user_id = auth.uid())
     or coalesce(public.my_staff()->>'role', '') = 'owner'
     or exists (select 1 from public.settings st where st.id = 'main' and (
-         (coalesce(auth.jwt()->>'email', '') <> '' and lower(st.data->>'ownerEmail') = lower(auth.jwt()->>'email'))
-      or (coalesce(auth.jwt()->>'phone', '') <> '' and public.norm_phone(st.data->>'ownerPhone') = public.norm_phone(auth.jwt()->>'phone'))))
+         (coalesce(auth.jwt()->>'email', '') <> '' and exists (select 1 from regexp_split_to_table(coalesce(st.data->>'ownerEmail', ''), '[,;]') e where lower(trim(e)) = lower(auth.jwt()->>'email')))
+      or (coalesce(auth.jwt()->>'phone', '') <> '' and exists (select 1 from regexp_split_to_table(coalesce(st.data->>'ownerPhone', ''), '[,;]') p where public.norm_phone(p) = public.norm_phone(auth.jwt()->>'phone')))))
 $$;
 
 -- Anyone with dashboard access (replaces the 001 version, so every existing "admin all" policy now includes the team)

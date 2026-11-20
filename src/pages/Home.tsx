@@ -298,7 +298,7 @@ function HeroBlock({ active, hero }: { active: Service[]; hero?: MediaItem }) {
         <p className="reveal mt-5 max-w-xl text-[18px] text-white/85" style={{ animationDelay: ".16s" }}>{t("Internationally recognised courses from your first breath to Divemaster, guided dives at the Blue Hole and Canyon, and the best of Dahab on land.")}</p>
         <p className="reveal mt-4" style={{ animationDelay: ".22s" }}><HandNote color="text-sun">{t("psst… your first dive starts at")} {money(Math.min(...active.filter((s) => s.category === "course").map((s) => s.price)))}</HandNote></p>
         <QuickBook services={active} />
-        <a href="#paths" className="mt-8 hidden items-center gap-2 text-sm text-white/70 hover:text-white sm:inline-flex"><ChevronDown size={18} /> Move your mouse — the water moves with you</a>
+        <a href="#paths" onClick={(e) => { e.preventDefault(); document.getElementById("paths")?.scrollIntoView({ behavior: "smooth" }); }} className="mt-8 hidden items-center gap-2 text-sm text-white/70 hover:text-white sm:inline-flex"><ChevronDown size={18} /> Move your mouse — the water moves with you</a>
       </div>
     </section>
   );

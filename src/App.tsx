@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import { Footer, Nav } from "./components/ui";
 import { DepthGauge, Splash, useRevealAll } from "./components/brand";
 import { Quiz } from "./components/extras";
-import { StoreProvider, useRoute, useStore } from "./lib/store";
+import { StoreProvider, toTop, useRoute, useStore } from "./lib/store";
 import { I18nProvider } from "./lib/i18n";
 import { initAnalytics, track } from "./lib/analytics";
 import Home from "./pages/Home";
@@ -10,11 +10,22 @@ import Catalog, { Contact, Gallery } from "./pages/Catalog";
 import Book, { Thanks } from "./pages/Book";
 import Admin from "./pages/Admin";
 import { Account, Blog, Manage, PostView } from "./pages/Guest";
+import { seedShowcase } from "./pages/Showcase";
 
 function Shell() {
   const [route] = useRoute();
   const { ready, settings } = useStore();
   useRevealAll(route);
+  const store = useStore();
+  // Every page opens at the top (header, footer and in-page links alike)
+  useLayoutEffect(() => { toTop(); }, [route]);
+  useEffect(() => { try { history.scrollRestoration = "manual"; } catch { /* */ } }, []);
+  // Demo site (no database yet): fill it with the Mohamed Attar showcase on first visit so every feature has data
+  useEffect(() => {
+    if (!ready || store.backend?.mode !== "local" || store.bookings.some((b) => (b as any).showcase)) return;
+    try { if (localStorage.getItem("dd:showcase-off") || localStorage.getItem("dd:seeded")) return; localStorage.setItem("dd:seeded", "1"); } catch { return; }
+    seedShowcase(store);
+  }, [ready]);
   useEffect(() => {
     // returning from Paymob: ?r=thanks&success=true…
     if (new URLSearchParams(location.search).get("r") === "thanks" && location.hash !== "#thanks") location.hash = "thanks";
