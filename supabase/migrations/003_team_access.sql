@@ -53,7 +53,7 @@ $$;
 
 -- What the app asks after sign-in
 create or replace function public.my_access() returns jsonb language sql stable security definer set search_path = public as $$
-  select case when public.is_owner() then jsonb_build_object('owner', true, 'role', 'owner', 'staffId', 'owner', 'name', 'Owner')
+  select case when public.is_owner() then jsonb_build_object('owner', true, 'role', 'owner', 'staffId', 'owner', 'name', coalesce((select data->>'ownerName' from public.settings where id = 'main'), 'Owner'))
               when public.my_staff() is not null then jsonb_build_object('owner', false, 'role', public.my_staff()->>'role', 'staffId', public.my_staff()->>'id', 'name', public.my_staff()->>'name')
               else null end
 $$;

@@ -147,6 +147,7 @@ export interface Settings {
   centerSignature: string;
   adminPin: string;
   /** The owner always signs in with this phone (SMS code) or this Gmail */
+  ownerName?: string;
   ownerPhone?: string;
   ownerEmail?: string;
   depositPct: number;

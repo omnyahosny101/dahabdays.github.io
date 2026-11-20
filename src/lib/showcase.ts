@@ -36,7 +36,7 @@ export function buildShowcase(services: Service[], settings: Settings) {
   const staff: Staff[] = [
     { id: "sc-staff-1", name: "Instructor (demo)", role: "instructor", pin: "1111", phone: "+20 100 000 0101", email: "instructor.dahabdays@gmail.com", commissionPct: 12, baseSalary: 8000, active: true },
     { id: "sc-staff-2", name: "Manager (demo)", role: "manager", pin: "2222", phone: "+20 100 000 0102", email: "manager.dahabdays@gmail.com", commissionPct: 0, baseSalary: 15000, active: true },
-    { id: "sc-staff-3", name: DEMO_GUEST.name + " (test user)", role: "front-desk", pin: "3333", phone: DEMO_GUEST.phone, email: "mohamed.attar.test@gmail.com", commissionPct: 0, baseSalary: 9000, active: true }
+    { id: "sc-staff-3", name: "Front desk (demo)", role: "front-desk", pin: "3333", phone: "+20 100 000 0103", email: "frontdesk.dahabdays@gmail.com", commissionPct: 0, baseSalary: 9000, active: true }
   ];
   const inst = staff[0].id;
 

@@ -133,6 +133,7 @@ export const DEFAULT_SETTINGS: Settings = {
   centerSigner: "",
   centerSignature: "",
   adminPin: "dahab",
+  ownerName: "Mohamed Attar",
   ownerPhone: "+20 100 051 5039",
   ownerEmail: "",
   depositPct: 25,

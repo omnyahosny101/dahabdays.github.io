@@ -215,7 +215,7 @@ export function TeamTab() {
 
       {view === "members" && <Card title="Who can sign in" action={<button className="btn-sea" onClick={() => { setErr(""); setEdit({ ...blank, id: uid() }); }}><Plus size={16} /> Give access</button>}>
         <ul className="divide-y">
-          <li className="flex items-start gap-3 py-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-navy text-sm font-black text-sun">OW</span><span className="min-w-0 flex-1"><b>Owner</b><span className="block break-words text-sm text-ink/55" dir="ltr">{[settings.ownerPhone, settings.ownerEmail].filter(Boolean).join(" · ") || "Set the owner phone/Gmail in Settings"}</span></span><span className="chip bg-sun/30 text-navy">Owner</span></li>
+          <li className="flex items-start gap-3 py-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-navy text-sm font-black text-sun">OW</span><span className="min-w-0 flex-1"><b>{settings.ownerName || "Owner"}</b><span className="block break-words text-sm text-ink/55" dir="ltr">{[settings.ownerPhone, settings.ownerEmail].filter(Boolean).join(" · ") || "Set the owner phone/Gmail in Settings"}</span></span><span className="chip bg-sun/30 text-navy">Owner</span></li>
           {staff.map((s, i) => <li key={s.id} className="flex items-start gap-3 py-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl text-sm font-black text-white" style={{ background: STAFF_COLORS[i % 6] }}>{s.name.replace(/\(.*?\)/g, "").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}</span>
             <span className="min-w-0 flex-1"><b className={s.active ? "" : "text-ink/40 line-through"}>{s.name}</b>

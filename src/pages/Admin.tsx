@@ -86,7 +86,7 @@ function Login() {
   const [phone, setPhone] = useState(""); const [code, setCode] = useState(""); const [step, setStep] = useState<"enter" | "code">("enter");
   const [demoCode, setDemoCode] = useState(""); const [gmail, setGmail] = useState(""); const [who, setWho] = useState("owner"); const [pin, setPin] = useState("");
   const [err, setErr] = useState(""); const [busy, setBusy] = useState(false);
-  const owner = { id: "owner", name: "Owner", role: "owner" };
+  const owner = { id: "owner", name: settings.ownerName || "Owner", role: "owner" };
 
   /** Who is this phone/email? The owner, an active team member, or nobody */
   const grant = async (id: { phone?: string; email?: string }, via: string) => {
@@ -170,7 +170,7 @@ function Login() {
 
         {err && <p className="mt-3 text-red">{err}</p>}
         {!live && <div className="mt-5 rounded-2xl bg-sand p-3 text-sm text-ink/75">
-          <b>Try it:</b> the owner's number is <button className="font-semibold text-royal" dir="ltr" onClick={() => { setHow("phone"); setStep("enter"); setPhone(settings.ownerPhone || ""); }}>{settings.ownerPhone}</button>. After loading the showcase you can also sign in as <button className="font-semibold text-royal" onClick={() => { setHow("google"); setGmail("mohamed.attar.test@gmail.com"); }}>Mohamed Attar (front desk)</button>.
+          <b>Try it:</b> {settings.ownerName || "The owner"} (owner, full access) signs in with <button className="font-semibold text-royal" dir="ltr" onClick={() => { setHow("phone"); setStep("enter"); setPhone(settings.ownerPhone || ""); }}>{settings.ownerPhone}</button>. After loading the showcase you can also try a limited role: <button className="font-semibold text-royal" onClick={() => { setHow("google"); setGmail("frontdesk.dahabdays@gmail.com"); }}>Front desk (demo)</button>.
           {how !== "pin" && <button className="mt-2 block text-xs font-semibold text-ink/50 underline" onClick={() => { setHow("pin"); setErr(""); }}>Use a PIN instead (preview only)</button>}
           {how === "pin" && <p className="mt-1 text-xs text-ink/50">Owner PIN: {settings.adminPin === "dahab" ? "dahab" : "set in Settings"}</p>}
         </div>}
@@ -665,6 +665,7 @@ function SettingsTab() {
       </Card>
       {user?.role === "owner" && <Card title="Owner sign-in">
         <div className="grid gap-4 sm:grid-cols-2">
+          <label className="sm:col-span-2"><span className="label">Owner name</span><input className="input" value={s.ownerName || ""} onChange={f("ownerName")} /></label>
           <label><span className="label">Owner mobile (SMS code)</span><input className="input" dir="ltr" type="tel" value={s.ownerPhone || ""} onChange={f("ownerPhone")} /></label>
           <label><span className="label">Owner Gmail (Google sign-in)</span><input className="input" dir="ltr" type="email" value={s.ownerEmail || ""} onChange={f("ownerEmail")} placeholder="owner@gmail.com" /></label>
           {backend?.mode !== "supabase" && <label><span className="label">Backup PIN (preview only)</span><input className="input" value={s.adminPin} onChange={f("adminPin")} /></label>}
