@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowRight, CalendarCheck, FileSignature, CreditCard, Waves, ChevronDown } from "lucide-react";
-import { BookButton, Empty, Heading, HeroCanvas, ReelCard, ServiceCard, ServiceDetail, Sheet, Visual, ContactList } from "../components/ui";
+import { AutoVideo, BookButton, Empty, Heading, HeroCanvas, ReelCard, ServiceCard, ServiceDetail, Sheet, Visual, ContactList } from "../components/ui";
 import Scene from "../components/Scene";
 import { Counter, HandNote, Mark, Marquee, Phase, RedTab, Stamp, Wave, useBubbles } from "../components/brand";
 import { Quiz, Reviews, SeaConditions } from "../components/extras";
@@ -205,9 +205,9 @@ function QuickBook({ services }: { services: Service[] }) {
 }
 
 function ClientWall({ clients }: { clients: MediaItem[] }) {
-  const samples: { scene: SceneKey; caption: string }[] = [
-    { scene: "classroom", caption: "Open Water graduates" }, { scene: "bluehole", caption: "Blue Hole snorkel group" },
-    { scene: "diver", caption: "First intro dive" }, { scene: "tawilat", caption: "Tawilat night crew" }
+  const samples: { scene: SceneKey; caption: string; url: string }[] = [
+    { scene: "classroom", caption: "Open Water graduates", url: STOCK.diverReef }, { scene: "bluehole", caption: "Blue Hole snorkel group", url: STOCK.dahabWaves },
+    { scene: "diver", caption: "First intro dive", url: STOCK.anthias }, { scene: "tawilat", caption: "Tawilat night crew", url: STOCK.mountainSunset }
   ];
   if (clients.length) return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -217,7 +217,7 @@ function ClientWall({ clients }: { clients: MediaItem[] }) {
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {samples.map((c, i) => <figure key={c.caption} data-reveal style={{ ["--d" as string]: `${i * 90}ms` }} className="relative"><div className="dframe aspect-square overflow-hidden shadow-card"><Scene k={c.scene} /></div><figcaption className="hand mt-3 text-[24px] text-navy">{c.caption}</figcaption>{i === 0 && <Stamp word="CERTIFIED" className="absolute -right-1 -top-4 w-20" />}</figure>)}
+        {samples.map((c, i) => <figure key={c.caption} data-reveal style={{ ["--d" as string]: `${i * 90}ms` }} className="relative"><div className="dframe aspect-square overflow-hidden shadow-card"><Visual scene={c.scene} url={c.url} label={c.caption} /></div><figcaption className="hand mt-3 text-[24px] text-navy">{c.caption}</figcaption>{i === 0 && <Stamp word="CERTIFIED" className="absolute -right-1 -top-4 w-20" />}</figure>)}
       </div>
       <div className="mt-6"><Empty>Sample layout — add your clients' photos and reels (with their permission) from Dashboard › Media and choose “Clients”.</Empty></div>
     </>
@@ -294,7 +294,7 @@ function HeroBlock({ active, hero }: { active: Service[]; hero?: MediaItem }) {
       </div>
       <div className="wrap pb-10 pt-32 sm:pb-16">
         <div className="reveal mb-6 flex flex-wrap items-center gap-3"><Mark light animate gap="#0f3550" className="w-28 sm:w-36" /><RedTab>{t("Diving Center · Dahab")}</RedTab></div>
-        <h1 className="reveal max-w-4xl text-[42px] leading-[1.02] sm:text-[74px]" style={{ animationDelay: ".08s" }}><span className="font-black">{t("Learn to dive")}</span> <span className="font-medium text-sky">{t("where the desert meets the Red Sea")}</span></h1>
+        <h1 className="reveal max-w-4xl text-[42px] leading-[1.02] sm:text-[74px]" style={{ animationDelay: ".08s" }}><span className="font-black">{t("Learn to dive")}</span> <span className="font-black text-sun">{t("where the desert meets the Red Sea")}</span></h1>
         <p className="reveal mt-5 max-w-xl text-[18px] text-white/85" style={{ animationDelay: ".16s" }}>{t("Internationally recognised courses from your first breath to Divemaster, guided dives at the Blue Hole and Canyon, and the best of Dahab on land.")}</p>
         <p className="reveal mt-4" style={{ animationDelay: ".22s" }}><HandNote color="text-sun">{t("psst… your first dive starts at")} {money(Math.min(...active.filter((s) => s.category === "course").map((s) => s.price)))}</HandNote></p>
         <QuickBook services={active} />
@@ -308,7 +308,7 @@ function HeroMedia({ url, kind }: { url: string; kind?: "image" | "video" }) {
   const [ok, setOk] = useState(true);
   if (!ok) return null; // the animated canvas stays visible underneath
   return /\.(mp4|webm|mov)(\?|$)/i.test(url) || kind === "video"
-    ? <video src={url} poster={STOCK.heroPoster} autoPlay muted loop playsInline className="h-full w-full object-cover opacity-90" onError={() => setOk(false)} />
+    ? <AutoVideo src={url} poster={STOCK.heroPoster} className="opacity-90" onError={() => setOk(false)} />
     : <img src={url} alt="" className="kenburns h-full w-full object-cover" onError={() => setOk(false)} />;
 }
 
@@ -325,24 +325,24 @@ function CoursePathStrip() {
 function FamilyBlock() {
   const { media } = useStore();
   const crew = media.filter((m) => m.tag === "Team");
-  const roles: { scene: SceneKey; role: string; note: string }[] = [
-    { scene: "diver", role: "Your instructor", note: "patient, funny, obsessed with buoyancy" },
-    { scene: "classroom", role: "Your dive guide", note: "knows where the turtle sleeps" },
-    { scene: "tawilat", role: "Your desert guide", note: "makes the best Bedouin tea" }
+  const roles: { scene: SceneKey; role: string; note: string; photo: string }[] = [
+    { scene: "diver", role: "Your instructor", note: "patient, funny, obsessed with buoyancy", photo: STOCK.diverReef },
+    { scene: "classroom", role: "Your dive guide", note: "knows where the turtle sleeps", photo: STOCK.fishCorals },
+    { scene: "tawilat", role: "Your desert guide", note: "makes the best Bedouin tea", photo: STOCK.camelsDesert }
   ];
   return (
     <section className="band relative overflow-hidden bg-sand">
       <div className="wrap grid items-center gap-12 lg:grid-cols-[1fr_1.1fr]">
         <div data-reveal>
           <RedTab className="mb-4">Our promise</RedTab>
-          <h2 className="text-[34px] leading-[1.05] sm:text-[52px]"><span className="font-black">Come as a guest,</span> <span className="font-medium text-sky">leave as a family member</span></h2>
+          <h2 className="text-[34px] leading-[1.05] sm:text-[52px]"><span className="font-black">Come as a guest,</span> <span className="font-black text-red">leave as a family member</span></h2>
           <p className="mt-5 max-w-lg text-[17px] text-ink/75">It's written on our door, and we mean it. Small groups, the same faces every day, tea after the dive and a WhatsApp group that keeps going long after you fly home.</p>
           <div className="mt-6"><HandNote>See you at the center at 8:30!</HandNote></div>
         </div>
         <div className="grid grid-cols-3 gap-3 sm:gap-5">
-          {(crew.length ? crew.slice(0, 3).map((m, i) => ({ m, ...roles[i % 3] })) : roles.map((r) => ({ m: undefined as MediaItem | undefined, ...r }))).map(({ m, scene, role, note }, i) => (
+          {(crew.length ? crew.slice(0, 3).map((m, i) => ({ m, ...roles[i % 3] })) : roles.map((r) => ({ m: undefined as MediaItem | undefined, ...r }))).map(({ m, scene, role, note, photo }, i) => (
             <figure key={role + i} data-reveal style={{ ["--d" as string]: `${i * 120}ms`, marginTop: i === 1 ? 40 : 0 }}>
-              <div className="dframe aspect-[3/4] overflow-hidden shadow-card"><Visual scene={scene} url={m?.url} kind={m?.kind} label={m?.caption || role} /></div>
+              <div className="dframe aspect-[3/4] overflow-hidden shadow-card"><Visual scene={scene} url={m?.url || photo} kind={m?.kind} label={m?.caption || role} /></div>
               <figcaption className="mt-3"><span className="block font-display text-sm font-black sm:text-base">{m?.caption || role}</span><span className="hand block text-[19px] leading-tight text-ink/70 sm:text-[22px]">{note}</span></figcaption>
             </figure>
           ))}

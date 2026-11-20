@@ -12,7 +12,7 @@ const Page = ({ kicker, a, b, children }: { kicker: string; a: string; b: string
   const { t } = useI18n();
   return (
     <div className="bg-foam pb-20">
-      <section className="bg-navy pb-10 pt-32 text-white"><div className="wrap"><RedTab>{t(kicker)}</RedTab><h1 className="mt-4 break-words text-[38px] leading-tight sm:text-[54px]"><span className="font-black">{t(a)}</span> <span className="font-medium text-sky">{t(b)}</span></h1></div></section>
+      <section className="bg-navy pb-10 pt-32 text-white"><div className="wrap"><RedTab>{t(kicker)}</RedTab><h1 className="mt-4 break-words text-[38px] leading-tight sm:text-[54px]"><span className="font-black">{t(a)}</span> <span className="font-black text-sun">{t(b)}</span></h1></div></section>
       <Wave top="#15284B" back="#2EA3E3" front="#EAF6FD" />
       <div className="wrap max-w-4xl">{children}</div>
     </div>

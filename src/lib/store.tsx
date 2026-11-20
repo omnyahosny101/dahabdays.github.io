@@ -144,10 +144,12 @@ export function useRoute(): [Route, (r: Route) => void] {
   const parse = () => { const h = location.hash.replace("#", "") as Route; return ROUTES.includes(h) ? h : "home"; };
   const [route, setRoute] = useState<Route>(parse);
   useEffect(() => {
-    const on = () => { setRoute(parse()); window.scrollTo({ top: 0 }); };
+    const on = () => { setRoute(parse()); toTop(); };
     window.addEventListener("hashchange", on);
     return () => window.removeEventListener("hashchange", on);
   }, []);
-  return [route, (r) => { if (location.hash === "#" + r) window.scrollTo({ top: 0 }); else location.hash = r; }];
+  return [route, (r) => { if (location.hash === "#" + r) toTop(); else location.hash = r; }];
 }
-export const go = (r: Route) => { if (location.hash === "#" + r) window.scrollTo({ top: 0 }); location.hash = r; };
+export const go = (r: Route) => { if (location.hash === "#" + r) toTop(); location.hash = r; };
+/** Jump (not smooth-scroll) to the top, and again after the new page has rendered, so a page change never lands mid-page or on the footer */
+export const toTop = () => { const up = () => window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior }); up(); requestAnimationFrame(up); setTimeout(up, 60); };

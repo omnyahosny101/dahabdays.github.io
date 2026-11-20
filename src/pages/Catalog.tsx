@@ -29,7 +29,7 @@ export default function Catalog({ category }: { category: Exclude<Category, "add
     <>
       <section className="relative isolate flex min-h-[62svh] items-end overflow-hidden bg-navy pt-[68px] text-white">
         <div className="absolute inset-0 -z-10"><Visual scene={page.scene} url={page.img} animate label={page.kicker} /><div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/40 to-transparent" /></div>
-        <div className="wrap pb-12"><RedTab className="reveal">{t(page.kicker)}</RedTab><h1 className="reveal mt-4 max-w-3xl text-[40px] leading-[1.04] sm:text-[62px]" style={{ animationDelay: ".08s" }}><span className="font-black">{t(page.title.split("|")[0])}</span> <span className="font-medium text-sky">{t(page.title.split("|")[1])}</span></h1><p className="reveal mt-4 max-w-2xl text-[18px] text-white/80" style={{ animationDelay: ".16s" }}>{page.lead}</p></div>
+        <div className="wrap pb-12"><RedTab className="reveal">{t(page.kicker)}</RedTab><h1 className="reveal mt-4 max-w-3xl text-[40px] leading-[1.04] sm:text-[62px]" style={{ animationDelay: ".08s" }}><span className="font-black">{t(page.title.split("|")[0])}</span> <span className="font-black text-sun">{t(page.title.split("|")[1])}</span></h1><p className="reveal mt-4 max-w-2xl text-[18px] text-white/80" style={{ animationDelay: ".16s" }}>{page.lead}</p></div>
       </section>
 
       {category === "rental" ? <Rentals list={list} /> : (
@@ -113,7 +113,7 @@ export function Gallery() {
   const list = real ? items.filter((m) => tag === "All" || m.tag === tag) : SAMPLE.filter((s) => tag === "All" || s.tag === tag);
   return (
     <>
-      <section className="bg-navy pb-12 pt-32 text-white"><div className="wrap"><RedTab>Gallery and reels</RedTab><h1 className="mt-4 text-[40px] leading-tight sm:text-[62px]"><span className="font-black">Moments</span> <span className="font-medium text-sky">from Dahab</span></h1><p className="mt-3 max-w-xl text-white/75">Photos and clips from our courses, dives, trips and the people who joined them.</p></div></section>
+      <section className="bg-navy pb-12 pt-32 text-white"><div className="wrap"><RedTab>Gallery and reels</RedTab><h1 className="mt-4 text-[40px] leading-tight sm:text-[62px]"><span className="font-black">Moments</span> <span className="font-black text-sun">from Dahab</span></h1><p className="mt-3 max-w-xl text-white/75">Photos and clips from our courses, dives, trips and the people who joined them.</p></div></section>
       <Wave top="#15284B" back="#2EA3E3" front="#FFFFFF" />
       <section className="band bg-white">
         <div className="wrap">
@@ -138,7 +138,7 @@ export function Contact() {
   return (
     <section className="bg-foam pb-20 pt-32">
       <div className="wrap grid gap-8 lg:grid-cols-2">
-        <div><RedTab>Contact</RedTab><h1 className="mt-4 text-[40px] leading-tight sm:text-[52px]"><span className="font-black">Talk to</span> <span className="font-medium text-sky">the family</span></h1><p className="mt-3 text-ink/70">Tell us your dates and experience and we'll suggest the right course or dive plan.</p><div className="mt-8 rounded-3xl bg-white p-6"><ContactList /></div><a href={"https://wa.me/" + settings.whatsapp} target="_blank" rel="noreferrer" className="btn-coral mt-6">Message on WhatsApp</a></div>
+        <div><RedTab>Contact</RedTab><h1 className="mt-4 text-[40px] leading-tight sm:text-[52px]"><span className="font-black">Talk to</span> <span className="font-black text-red">the family</span></h1><p className="mt-3 text-ink/70">Tell us your dates and experience and we'll suggest the right course or dive plan.</p><div className="mt-8 rounded-3xl bg-white p-6"><ContactList /></div><a href={"https://wa.me/" + settings.whatsapp} target="_blank" rel="noreferrer" className="btn-coral mt-6">Message on WhatsApp</a></div>
         <div className="relative"><div className="dframe aspect-[4/3] overflow-hidden shadow-card"><Visual scene="lagoon" url={STOCK.dahabBoatBlue} label="Dahab coast" /></div><Stamp word="HELLO" sub="FROM DAHAB" className="absolute -bottom-6 left-6 w-28" /><Mark className="absolute -top-6 right-10 w-28 drop-shadow" /></div>
       </div>
     </section>

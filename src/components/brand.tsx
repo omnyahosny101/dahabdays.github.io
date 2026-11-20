@@ -50,8 +50,8 @@ export function PhaseSteps({ steps, active }: { steps: string[]; active: number 
     <ol className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
       {steps.map((s, i) => (
         <li key={s} className="flex shrink-0 items-center gap-2">
-          <span className={`flex items-center gap-2 rounded-full py-1.5 pl-2 pr-3.5 text-sm font-bold transition ${i === active ? "bg-navy text-white" : i < active ? "bg-sky/15 text-navy" : "bg-navy/5 text-navy/50"}`}>
-            <span className={i > active ? "opacity-40" : ""}><Phase i={i} size={16} /></span>{s}
+          <span className={`flex items-center gap-2 rounded-full py-1.5 ps-2 ${i === active ? "pe-3.5" : "pe-2 sm:pe-3.5"} text-sm font-bold transition ${i === active ? "bg-navy text-white" : i < active ? "bg-sky/15 text-navy" : "bg-navy/5 text-navy/50"}`}>
+            <span className={i > active ? "opacity-40" : ""}><Phase i={i} size={16} /></span><span className={i === active ? "" : "hidden sm:inline"}>{s}</span>
           </span>
           {i < steps.length - 1 && <span className="h-0.5 w-5 rounded bg-navy/15" aria-hidden />}
         </li>
@@ -133,7 +133,7 @@ export function DepthGauge() {
   const label = [...MARKS].reverse().find(([m]) => depth >= m)?.[1] || "Surface";
   const phase = depth < 12 ? 3 : depth < 18 ? 2 : depth < 30 ? 1 : 0;
   return (
-    <div className="pointer-events-none fixed bottom-4 start-4 z-30 flex items-center gap-2.5 rounded-full bg-white/95 py-1.5 pl-2 pr-4 text-navy shadow-card backdrop-blur sm:bottom-6 sm:start-6" aria-hidden>
+    <div className="pointer-events-none fixed bottom-6 start-6 z-30 hidden md:flex items-center gap-2.5 rounded-full bg-white/95 py-1.5 pl-2 pr-4 text-navy shadow-card backdrop-blur " aria-hidden>
       <span className="relative grid h-9 w-9 place-items-center rounded-full bg-navy/5"><Phase i={phase} size={18} /></span>
       <span className="leading-tight"><span className="block font-display text-[15px] font-black tabular-nums">{depth} m</span><span className="block text-[11px] font-semibold text-navy/60">{label}</span></span>
     </div>

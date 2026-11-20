@@ -326,7 +326,7 @@ export function Thanks() {
       <div className="wrap max-w-3xl">
         <div className="card p-6 text-center sm:p-10">
           <Stamp word={paid ? "PAID" : dep ? "DEPOSIT" : "BOOKED"} className="mx-auto w-36" />
-          <h1 className="mt-4 text-[32px] leading-tight sm:text-[40px]"><span className="font-black">{t("You're booked,")}</span> <span className="font-medium text-sky">{t("welcome to the family")}</span></h1>
+          <h1 className="mt-4 text-[32px] leading-tight sm:text-[40px]"><span className="font-black">{t("You're booked,")}</span> <span className="font-black text-red">{t("welcome to the family")}</span></h1>
           {b ? <p className="mt-2 text-ink/70">{t("Booking reference")} <b className="font-display text-navy">{b.ref}</b> · {b.customer.email}</p> : <p className="mt-2 text-ink/70">We'll confirm your booking by email and WhatsApp.</p>}
           {bs.length > 0 && <ul className="mt-8 space-y-2 text-start">{bs.map((x, i) => (
             <li key={x.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-foam p-4">

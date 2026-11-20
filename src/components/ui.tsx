@@ -7,6 +7,7 @@ import { track } from "../lib/analytics";
 import { ShoppingBag, UserRound } from "lucide-react";
 import type { MediaItem, SceneKey, Service } from "../lib/types";
 import { egp, go, useStore, type Route } from "../lib/store";
+import { STOCK } from "../lib/stock";
 
 /* ---------- Animated underwater hero (plays when no hero video is uploaded) ---------- */
 export function HeroCanvas() {
@@ -69,13 +70,45 @@ export function HeroCanvas() {
   return <canvas ref={ref} className="absolute inset-0 h-full w-full" aria-hidden />;
 }
 
-/* ---------- A picture slot: owner media if present, else illustrated scene ---------- */
+/* ---------- Background video: always muted + inline, never shows a play button.
+   If the phone refuses autoplay (e.g. iPhone Low Power Mode) we show the poster photo instead. ---------- */
+export function AutoVideo({ src, poster, className = "", label, onError }: { src: string; poster?: string; className?: string; label?: string; onError?: () => void }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [blocked, setBlocked] = useState(false);
+  useEffect(() => {
+    const v = ref.current; if (!v) return;
+    v.muted = true; v.defaultMuted = true; v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.setAttribute("webkit-playsinline", "");
+    const tryPlay = () => v.play().then(() => setBlocked(false)).catch(() => setBlocked(true));
+    tryPlay();
+    const retry = () => { if (v.paused) tryPlay(); };
+    window.addEventListener("touchstart", retry, { once: true, passive: true });
+    return () => window.removeEventListener("touchstart", retry);
+  }, [src]);
+  return <>
+    <video ref={ref} src={src} poster={poster} className={`autovideo h-full w-full object-cover ${blocked && poster ? "invisible absolute" : ""} ${className}`} autoPlay muted loop playsInline preload="metadata" disablePictureInPicture controls={false} aria-label={label} onError={onError} />
+    {blocked && poster && <img src={poster} alt={label || ""} className={`h-full w-full object-cover ${className}`} />}
+  </>;
+}
+
+/* Every picture slot gets a real photo: owner media first, then a matching stock photo, then (only if offline) the illustration */
+const SCENE_PHOTO: Partial<Record<SceneKey, string>> = {
+  reef: STOCK.redSeaCorals, bluehole: STOCK.dahabWaves, bells: STOCK.diverCavern, canyon: STOCK.diverCavern, diver: STOCK.diverReef,
+  classroom: STOCK.fishCorals, turtle: STOCK.anthias, night: STOCK.dahabTwilight, pools: STOCK.dahabBoatBlue, lagoon: STOCK.dahabCoastMountains,
+  tawilat: STOCK.mountainSunset, ghazala: STOCK.sinaiMountains, wadi: STOCK.camelsDesert, sinai: STOCK.dahabCliffMeditate, gear: STOCK.diverReef
+};
+
+/* ---------- A picture slot ---------- */
 export function Visual({ scene, url, kind, className = "", animate = false, label, poster }: { scene: SceneKey; url?: string; kind?: "image" | "video"; className?: string; animate?: boolean; label?: string; poster?: string }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [url]);
+  const [stockFailed, setStockFailed] = useState(false);
   const isVideo = kind === "video" || (!!url && /\.(mp4|webm|mov)(\?|$)/i.test(url));
-  if (!url || failed) return <Scene k={scene} animate={animate} label={label} className={className} />;
-  if (isVideo) return <video src={url} poster={poster} className={`h-full w-full object-cover ${className}`} autoPlay muted loop playsInline aria-label={label} onError={() => setFailed(true)} />;
+  if (!url || failed) {
+    const photo = SCENE_PHOTO[scene];
+    if (photo && !stockFailed) return <img src={photo} alt={label || ""} loading="lazy" onError={() => setStockFailed(true)} className={`h-full w-full object-cover ${animate ? "kenburns" : ""} ${className}`} />;
+    return <Scene k={scene} animate={animate} label={label} className={className} />;
+  }
+  if (isVideo) return <AutoVideo src={url} poster={poster} className={className} label={label} onError={() => setFailed(true)} />;
   return <img src={url} alt={label || ""} loading="lazy" onError={() => setFailed(true)} className={`h-full w-full object-cover ${animate ? "kenburns" : ""} ${className}`} />;
 }
 
@@ -161,7 +194,7 @@ export function Heading({ kicker, title, children, light = false }: { kicker?: s
   return (
     <div className="mb-10 max-w-2xl" data-reveal>
       {kicker && <RedTab className="mb-4">{kicker}</RedTab>}
-      <h2 className="text-[32px] leading-[1.05] sm:text-[46px]"><span className="font-black">{a}</span>{b && <span className={`font-medium ${light ? "text-sky" : "text-sky"}`}> {b}</span>}</h2>
+      <h2 className="text-[32px] leading-[1.05] sm:text-[46px]"><span className="font-black">{a}</span>{b && <span className={`font-black ${light ? "text-sun" : "text-red"}`}> {b}</span>}</h2>
       {children && <p className={`mt-4 text-[17px] ${light ? "text-white/75" : "text-ink/70"}`}>{children}</p>}
     </div>
   );
@@ -241,7 +274,6 @@ export function ReelCard({ m, scene, caption, onOpen, url, poster }: { m?: Media
     <button onClick={onOpen} className="group relative aspect-[9/16] w-[220px] shrink-0 snap-start overflow-hidden rounded-[28px] bg-abyss text-left text-white shadow-card sm:w-[250px]">
       <Visual scene={scene} url={m?.url || url} kind={m?.kind || (url ? "video" : undefined)} poster={poster} animate label={caption} />
       <span className="absolute inset-0 bg-gradient-to-t from-abyss/90 via-transparent to-transparent" />
-      <span className="absolute left-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/20 backdrop-blur transition group-hover:bg-coral"><Play size={18} fill="currentColor" /></span>
       <span className="absolute inset-x-4 bottom-4 text-[15px] font-semibold leading-snug">{caption}</span>
     </button>
   );
