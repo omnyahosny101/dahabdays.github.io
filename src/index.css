@@ -1,0 +1,67 @@
+/* VOICE: warm, family-run, sunny; safety said calmly. IDEA: one Dahab day in four phases — the logo's D, D, D, crescent.
+   PICTURE: living underwater hero, the phase mark animating in, D-shaped photo frames, logbook stamps and hand notes.
+   COLOUR: Dahab Navy leads, Days Sky supports, Crescent Gold highlights, Diving Center Red is the one action colour.
+   TYPE: Montserrat Black + Medium pairs (like DAHAB DAYS), DM Sans body, Caveat for human notes, Alexandria for Arabic.
+   LAYOUT: full-bleed bands divided by waves, max 1240px content, stacks under 640px. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body { @apply bg-white text-ink font-sans antialiased; overflow-x: clip; font-size: 16px; }
+* { min-width: 0; }
+h1, h2, h3, .display { font-family: "Montserrat", system-ui, sans-serif; text-wrap: balance; letter-spacing: -0.015em; }
+.light { font-weight: 500; }
+html[lang="ar"] body, html[lang="ar"] h1, html[lang="ar"] h2, html[lang="ar"] h3, html[lang="ar"] .font-display, html[lang="ar"] .hand, html[lang="ar"] .tab { font-family: "Alexandria", "Noto Kufi Arabic", system-ui, sans-serif; letter-spacing: 0; }
+
+@layer components {
+.wrap { @apply mx-auto w-full max-w-[1240px] px-5 sm:px-8; }
+.band { @apply py-16 sm:py-24; }
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 min-h-[44px] font-semibold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-sky/40 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap active:scale-[.97]; }
+.btn-coral { @apply btn bg-red text-white shadow-[0_6px_0_#9e1622] hover:-translate-y-0.5 hover:shadow-[0_8px_0_#9e1622] active:translate-y-1 active:shadow-[0_2px_0_#9e1622]; }
+.btn-sea { @apply btn bg-navy text-white hover:bg-royal; }
+.btn-ghost { @apply btn border-2 border-navy/15 hover:border-navy/40 hover:bg-navy/5; }
+.btn-light { @apply btn bg-white/95 text-navy hover:bg-white; }
+.input { @apply w-full rounded-2xl border-2 border-navy/10 bg-white px-4 min-h-[48px] text-[16px] outline-none transition focus:border-sky focus:ring-4 focus:ring-sky/20; }
+textarea.input { @apply py-3; }
+.label { @apply block text-sm font-semibold text-ink/80 mb-1.5; }
+.card { @apply rounded-[28px] bg-white shadow-card overflow-hidden; }
+.chip { @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold whitespace-nowrap; }
+.tab { @apply inline-flex items-center rounded-md bg-red px-3 py-1.5 font-display text-[12px] font-bold uppercase tracking-[0.16em] text-white whitespace-nowrap; }
+.hand { font-family: "Caveat", "Segoe Print", cursive; font-weight: 500; letter-spacing: 0; }
+.dframe { border-radius: 28px 999px 999px 28px; }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; } .no-scrollbar { scrollbar-width: none; }
+.price { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ar { font-family: "Alexandria", "Noto Kufi Arabic", system-ui, sans-serif; direction: rtl; }
+
+/* ——— motion ——— */
+@keyframes drift { from { transform: scale(1.06) translate(0,0); } to { transform: scale(1.14) translate(-2%, -1.5%); } }
+.kenburns { animation: drift 14s ease-in-out infinite alternate; }
+@keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+.reveal { animation: rise .7s cubic-bezier(.2,.7,.2,1) both; }
+[data-reveal] { opacity: 0; transform: translateY(28px); transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0ms); }
+[data-reveal].in { opacity: 1; transform: none; }
+@keyframes phaseIn { from { opacity: 0; transform: translateX(-40px) scale(.6); } to { opacity: 1; transform: none; } }
+.phase-in > * { animation: phaseIn .6s cubic-bezier(.3,1.4,.5,1) both; }
+.phase-in > *:nth-child(1) { animation-delay: .36s; } .phase-in > *:nth-child(2) { animation-delay: .24s; } .phase-in > *:nth-child(3) { animation-delay: .12s; } .phase-in > *:nth-child(4) { animation-delay: 0s; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.loader > * { animation: bob 1s ease-in-out infinite; } .loader > *:nth-child(2) { animation-delay: .12s; } .loader > *:nth-child(3) { animation-delay: .24s; } .loader > *:nth-child(4) { animation-delay: .36s; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+.marquee { animation: marquee 38s linear infinite; } .marquee:hover { animation-play-state: paused; }
+@keyframes waveslide { to { transform: translateX(-50%); } }
+.wave-move { animation: waveslide 16s linear infinite; }
+@keyframes stamp { 0% { opacity: 0; transform: scale(2.2) rotate(-24deg); } 70% { opacity: 1; transform: scale(.92) rotate(-6deg); } 100% { transform: scale(1) rotate(-8deg); } }
+.stamp-in { animation: stamp .55s cubic-bezier(.2,.8,.3,1.2) .2s both; }
+@keyframes bubble { from { transform: translate(0,0) scale(.6); opacity: .9; } to { transform: translate(var(--x,0), -160px) scale(1.2); opacity: 0; } }
+.bubble { position: absolute; pointer-events: none; border: 1.5px solid rgba(255,255,255,.85); border-radius: 999px; animation: bubble 1.4s ease-out forwards; }
+@keyframes wiggle { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
+.group:hover .wiggle { animation: wiggle .5s ease-in-out; }
+.tilt { transition: transform .25s ease; transform-style: preserve-3d; }
+@media (prefers-reduced-motion: reduce) {
+  .kenburns, .reveal, .marquee, .wave-move, .loader > *, .phase-in > *, .stamp-in { animation: none !important; }
+  [data-reveal] { opacity: 1; transform: none; transition: none; }
+  html { scroll-behavior: auto; }
+}
