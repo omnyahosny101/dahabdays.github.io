@@ -21,7 +21,7 @@ const SAMPLE_REELS: { scene: SceneKey; caption: string }[] = [
 
 export default function Home() {
   const { services, media } = useStore();
-  const { t: tr, money } = useI18n();
+  const { t: tr, money, from: priceFrom } = useI18n();
   const [open, setOpen] = useState<Service | null>(null);
   const [reel, setReel] = useState<MediaItem | null>(null);
   const [stockReel, setStockReel] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export default function Home() {
   const active = services.filter((s) => s.active);
   const courses = active.filter((s) => s.category === "course").slice(0, 4);
   const trips = active.filter((s) => s.category === "tour");
-  const from = (c: string) => Math.min(...active.filter((s) => s.category === c).map((s) => s.price));
+  const from = (c: string) => Math.min(...active.filter((s) => s.category === c).map((s) => priceFrom(s)));
 
   return (
     <>
@@ -108,7 +108,7 @@ export default function Home() {
               <div className="absolute inset-0 transition duration-700 group-hover:scale-105"><Visual scene={s.scene} url={s.mediaUrl} label={s.name} /></div>
               <span className="absolute inset-0 bg-gradient-to-t from-abyss/90 via-abyss/10 to-transparent" />
               {s.badge && <span className="tab absolute left-4 top-4">{s.badge}</span>}
-              <span className="absolute inset-x-5 bottom-5"><span className="text-sm text-white/75">{s.duration}</span><span className="block font-display text-xl font-black leading-tight">{s.name}</span><span className="price mt-2 block font-semibold">{egp(s.price)}</span></span>
+              <span className="absolute inset-x-5 bottom-5"><span className="text-sm text-white/75">{s.duration}</span><span className="block font-display text-xl font-black leading-tight">{s.name}</span><span className="price mt-2 block font-semibold">{money(priceFrom(s))}</span></span>
             </button>
           ))}
         </div>
@@ -187,7 +187,7 @@ export default function Home() {
 
 function QuickBook({ services }: { services: Service[] }) {
   const { select } = useStore();
-  const { t, sv, money } = useI18n();
+  const { t, sv, money, from } = useI18n();
   const [id, setId] = useState(services.find((s) => s.id === "owd")?.id || services[0]?.id || "");
   const [date, setDate] = useState(today());
   return (
@@ -195,7 +195,7 @@ function QuickBook({ services }: { services: Service[] }) {
       onSubmit={(e) => { e.preventDefault(); try { sessionStorage.setItem("dd:date", date); } catch { /* */ } select(id); go("book"); }}>
       <label className="sr-only" htmlFor="qb-s">Program</label>
       <select id="qb-s" className="input border-0 focus:ring-0" value={id} onChange={(e) => setId(e.target.value)}>
-        {(["course", "fun", "tour", "rental"] as const).map((c) => <optgroup key={c} label={t({ course: "Courses", fun: "Guided dives", tour: "Dahab trips", rental: "Rentals" }[c])}>{services.filter((s) => s.category === c).map((s) => <option key={s.id} value={s.id}>{sv(s).name} — {money(s.price)}</option>)}</optgroup>)}
+        {(["course", "fun", "tour", "rental"] as const).map((c) => <optgroup key={c} label={t({ course: "Courses", fun: "Guided dives", tour: "Dahab trips", rental: "Rentals" }[c])}>{services.filter((s) => s.category === c).map((s) => <option key={s.id} value={s.id}>{sv(s).name} — {money(from(s))}</option>)}</optgroup>)}
       </select>
       <label className="sr-only" htmlFor="qb-d">Date</label>
       <input id="qb-d" type="date" min={today()} className="input border-0 focus:ring-0" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -283,7 +283,7 @@ function DiveMap() {
 function HeroBlock({ active, hero }: { active: Service[]; hero?: MediaItem }) {
   const bubbles = useBubbles<HTMLElement>();
   const { settings } = useStore();
-  const { t, money } = useI18n();
+  const { t, money, from } = useI18n();
   const heroUrl = hero?.url || settings.heroVideo;
   return (
     <section ref={bubbles} className="relative isolate flex min-h-[100svh] items-end overflow-hidden bg-navy text-white">
@@ -296,7 +296,7 @@ function HeroBlock({ active, hero }: { active: Service[]; hero?: MediaItem }) {
         <div className="reveal mb-6 flex flex-wrap items-center gap-3"><Mark light animate gap="#0f3550" className="w-28 sm:w-36" /><RedTab>{t("Diving Center · Dahab")}</RedTab></div>
         <h1 className="reveal max-w-4xl text-[42px] leading-[1.02] sm:text-[74px]" style={{ animationDelay: ".08s" }}><span className="font-black">{t("Learn to dive")}</span> <span className="font-black text-sun">{t("where the desert meets the Red Sea")}</span></h1>
         <p className="reveal mt-5 max-w-xl text-[18px] text-white/85" style={{ animationDelay: ".16s" }}>{t("Internationally recognised courses from your first breath to Divemaster, guided dives at the Blue Hole and Canyon, and the best of Dahab on land.")}</p>
-        <p className="reveal mt-4" style={{ animationDelay: ".22s" }}><HandNote color="text-sun">{t("psst… your first dive starts at")} {money(Math.min(...active.filter((s) => s.category === "course").map((s) => s.price)))}</HandNote></p>
+        <p className="reveal mt-4" style={{ animationDelay: ".22s" }}><HandNote color="text-sun">{t("psst… your first dive starts at")} {money(Math.min(...active.filter((s) => s.category === "course").map((s) => from(s))))}</HandNote></p>
         <QuickBook services={active} />
         <a href="#paths" onClick={(e) => { e.preventDefault(); document.getElementById("paths")?.scrollIntoView({ behavior: "smooth" }); }} className="mt-8 hidden items-center gap-2 text-sm text-white/70 hover:text-white sm:inline-flex"><ChevronDown size={18} /> Move your mouse — the water moves with you</a>
       </div>

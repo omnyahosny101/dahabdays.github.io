@@ -4,6 +4,9 @@ export type SceneKey =
   | "reef" | "bluehole" | "canyon" | "diver" | "tawilat" | "wadi" | "lagoon" | "pools"
   | "gear" | "sinai" | "night" | "turtle" | "classroom" | "bells" | "ghazala";
 
+import type { Market, PriceVariant } from "./pricing";
+export type { Market, PriceVariant };
+
 export interface Service {
   id: string;
   category: Category;
@@ -12,7 +15,11 @@ export interface Service {
   description: string;
   includes: string[];
   duration: string;
-  price: number;            // EGP
+  price: number;            // EGP — Egyptians & residents
+  priceEur?: number;        // EUR — international visitors
+  variants?: PriceVariant[]; // e.g. with / without equipment, with Coach Attar, package length
+  priceWeek?: number;       // rentals: weekly cap (EGP)
+  priceWeekEur?: number;    // rentals: weekly cap (EUR)
   unit: string;             // "per person", "per day", ...
   scene: SceneKey;          // illustrated fallback picture
   mediaUrl?: string;        // owner photo/video replaces the scene
@@ -42,6 +49,9 @@ export interface Booking {
   time: string;
   people: number;
   days?: number;   // rentals
+  variant?: string;  // chosen price option (equipment / Coach Attar / package length)
+  market?: Market;   // "eg" Egyptian & resident price, "intl" international price
+  fxRate?: number;   // EGP per EUR used for an international booking
   total: number;
   customer: { name: string; email: string; phone: string; country: string };
   notes?: string;

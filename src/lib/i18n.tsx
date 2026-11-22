@@ -1,6 +1,7 @@
 /* Language (English / Egyptian Arabic, RTL) and display currency (EGP / USD / EUR) */
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Service } from "./types";
+import { fromEgp, lineEgp, unitEgp, variantOf, type Market, type PriceLine } from "./pricing";
 
 export type Lang = "en" | "ar";
 export type Cur = "EGP" | "USD" | "EUR";
@@ -59,15 +60,28 @@ const AR: Record<string, string> = {
   "Never": "أبداً", "Once, on holiday": "مرة في أجازة", "I'm certified": "معايا شهادة", "Half a day": "نص يوم", "2 days": "يومين", "3–4 days": "٣-٤ أيام", "A week or more": "أسبوع أو أكتر",
   "Just try it": "أجرب بس", "A licence to dive anywhere": "شهادة أغطس بيها في أي مكان", "Explore deeper sites": "أستكشف أماكن أعمق", "Our pick for you": "اختيارنا ليك", "Start again": "من الأول",
   // blog
-  "Guides and stories": "أدلة وحكايات", "Read guide": "اقرا الدليل", "All guides": "كل الأدلة"
+  "Guides and stories": "أدلة وحكايات", "Read guide": "اقرا الدليل", "All guides": "كل الأدلة",
+  // prices
+  "With our instructor": "مع مدربينا", "With Coach Attar ★": "مع الكوتش عطار ★", "With equipment": "بالمعدات", "Own equipment": "بمعداتك",
+  "Price option": "الاختيار", "from": "من", "per week": "في الأسبوع", "per tank": "للتانك", "per package": "للباقة",
+  "Egyptian & resident prices — please bring your ID or residency to the center.": "أسعار المصريين والمقيمين — من فضلك هات البطاقة أو الإقامة معاك للمركز.",
+  "International prices in euro. You pay in Egyptian pounds at today's rate.": "أسعار الأجانب باليورو. الدفع بالجنيه المصري بسعر النهارده.",
+  "Taxi from the center to the dive site is included. Nature reserve fees are not included.": "التاكسي من المركز لموقع الغطس محسوب. رسوم المحميات مش محسوبة.",
+  "Charged in Egyptian pounds": "المبلغ بالجنيه المصري", "Courses include the full equipment.": "الكورسات شاملة كل المعدات.",
+  "Weekly price applied automatically.": "سعر الأسبوع بيتحسب أوتوماتيك."
 };
 
 const SERVICE_AR: Record<string, [string, string]> = {
+  "dsd-gold": ["تجربة الغطس — الباقة الذهبية", "غطستين وكورس أونلاين وشهادة."], "pack10": ["باقات الغطس — من يوم لـ ١٠ أيام", "غطستين في اليوم، وكل ما الأيام تزيد السعر يقل."],
+  "r-bcd": ["سترة الغطس BCD", "مقاسات من XS لـ XXL."], "r-suit": ["بدلة غطس", "٣ مم أو ٥ مم."], "r-reg": ["منظم التنفس", "طقم كامل بالأوكتوبس وعداد الهوا."], "r-torch": ["كشاف غطس", "للغطس الليلي والكانيون."],
+  "r-mask": ["ماسك وسنوركل", "ينفع للسنوركلينج كمان."], "r-fins": ["زعانف وبوت", "زعانف مفتوحة مع بوت."], "r-hoodie": ["هودي غطس", "غطا راس نيوبرين للشتا."], "r-weights": ["أوزان وحزام", "حزام بالأوزان."],
+  "r-buoy": ["عوامة فري دايفينج", "عوامة بحبل للفري دايفينج."], "r-snorkel": ["طقم سنوركلينج", "ماسك وسنوركل وزعانف."], "r-tank": ["تانك إضافي — هوا ١٥ لتر / نيتروكس", "غازات خاصة إضافية."],
+  "r-comp": ["كمبيوتر غطس", "يشتغل هوا ونيتروكس."], "r-cam": ["كاميرا أكشن بالجراب", "صوّر الريل بتاعك تحت الماية."],
   dsd: ["تجربة الغطس — أول غطسة", "أول نفس تحت الماية، مع مدرب جنبك."], owd: ["أوبن ووتر دايفر", "الرخصة الدولية للغطس لحد ١٨ متر في أي مكان في العالم."],
   aowd: ["أدفانسد أوبن ووتر", "غطس عميق وملاحة وتلات مغامرات — منهم الكانيون."], combo: ["باقة أوبن ووتر + أدفانسد", "من الصفر لـ ٣٠ متر في أقل من أسبوع."],
   rescue: ["ريسكيو دايفر + إسعافات أولية", "اتعلم تمنع المشاكل وتتعامل معاها."], nitrox: ["نيتروكس", "وقت أطول تحت الماية."], refresh: ["كورس تنشيط", "بقالك فترة مغطستش؟ راجع مهاراتك الأول."],
   dm: ["تدريب دايف ماستر", "أول مستوى احترافي. عيش في دهب واتدرب معانا."], shore: ["غطسة من الشط مع مرشد", "اللايت هاوس والإيل جاردن والآيلاندز."],
-  "bh-dive": ["يوم غطس البلز للبلو هول", "انزل من مدخنة البلز وكمّل للبلو هول."], "canyon-dive": ["غطسة الكانيون", "اعبر شق في الشعاب منوّر بأشعة الشمس."], pack10: ["باقة ١٠ غطسات", "أحسن سعر للغطسة للغواصين المعتمدين."],
+  "bh-dive": ["يوم غطس البلز للبلو هول", "انزل من مدخنة البلز وكمّل للبلو هول."], "canyon-dive": ["غطسة الكانيون", "اعبر شق في الشعاب منوّر بأشعة الشمس."],
   "bh-snorkel": ["يوم سنوركلينج البلو هول والبلز", "سنوركلينج على حافة أشهر حفرة في البحر."], pools: ["الثري بولز ووادي قني", "تلات حمامات طبيعية من المرجان وواحة نخيل."],
   lagoon: ["البلو لاجون ورأس أبو جالوم", "مركب من البلو هول لمحمية من غير طرق."], tawilat: ["ليلة جبل الطويلات", "فوردباي في الجبال، الكوبري المعلق، شاي بدوي ونجوم."],
   ghazala: ["سفاري الغروب في وادي الغزالة", "جدران صخرية دهبي وشاي الغروب مع مرشد بدوي."], sinai: ["شروق جبل موسى وسانت كاترين", "طلوع بالليل لمشاهدة الشروق من فوق الجبل."],
@@ -75,8 +89,19 @@ const SERVICE_AR: Record<string, [string, string]> = {
   "r-full": ["طقم غطس كامل", "سترة، منظم، بدلة، ماسك، زعانف، كمبيوتر."], "t-sharm": ["توصيل مطار شرم الشيخ", "عربية خاصة من المطار لفندقك في دهب."],
   "t-hotel": ["توصيل من وإلى الفندق", "بنعدي عليك في فندقك أو الكامب."], photos: ["باقة الصور والفيديو", "كل الصور والفيديوهات اللي بنصورها ليك بجودة كاملة."], lunch: ["غدا على البحر", "غدا في كافيه على البحر بين الغطسات."]
 };
+// names that changed with the printed price list
+Object.assign(SERVICE_AR, {
+  dsd: ["تجربة الغطس — غطسة واحدة", "أول نفس تحت الماية — غطسة في اللايت هاوس بالمواصلات."], refresh: ["مراجعة الغطس (سكوبا ريفيو)", "بقالك فترة مغطستش؟ راجع مهاراتك الأول."],
+  shore: ["غطسة مع مرشد — اللايت هاوس", "الريف بتاع دهب من الشط في البلد."], "canyon-dive": ["غطسة مع مرشد — موقع بعيد", "الكانيون أو البلو هول أو الآيلاندز — المرشد يختار الأحسن."],
+  "bh-dive": ["غطستين مع مرشد — مواقع بعيدة", "البلز للبلو هول هي الكلاسيك."]
+});
 
-interface I18n { lang: Lang; setLang(l: Lang): void; cur: Cur; setCur(c: Cur): void; t(s: string): string; money(egp: number): string; sv(s: Service): { name: string; short: string } }
+interface I18n {
+  lang: Lang; setLang(l: Lang): void; cur: Cur; setCur(c: Cur): void; t(s: string): string; money(egp: number): string; sv(s: Service): { name: string; short: string };
+  /** "eg" = Egyptian & resident prices (EGP), "intl" = international euro prices */
+  market: Market; eurRate: number;
+  unit(s: Service, variant?: string): number; line(s: Service, it: PriceLine): number; from(s: Service): number; vlabel(s: Service, variant?: string): string;
+}
 const Ctx = createContext<I18n>(null as unknown as I18n);
 export const useI18n = () => useContext(Ctx);
 
@@ -84,7 +109,7 @@ const read = <T,>(k: string, d: T): T => { try { return (localStorage.getItem(k)
 
 export function I18nProvider({ children, fallbackRates }: { children: ReactNode; fallbackRates: { USD: number; EUR: number } }) {
   const [lang, setLangS] = useState<Lang>(() => read<Lang>("dd:lang", "en"));
-  const [cur, setCurS] = useState<Cur>(() => read<Cur>("dd:cur", "EGP"));
+  const [cur, setCurS] = useState<Cur>(() => read<Cur>("dd:cur", read<Lang>("dd:lang", "en") === "ar" ? "EGP" : "EUR"));
   const [live, setLive] = useState<{ USD: number; EUR: number } | null>(null);
   useEffect(() => {
     document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
@@ -103,8 +128,11 @@ export function I18nProvider({ children, fallbackRates }: { children: ReactNode;
       return new Intl.NumberFormat(lang === "ar" ? "ar-EG" : "en-US", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(v);
     };
     const sv = (s: Service) => (lang === "ar" && SERVICE_AR[s.id] ? { name: SERVICE_AR[s.id][0], short: SERVICE_AR[s.id][1] } : { name: s.name, short: s.short });
+    const market: Market = cur === "EGP" ? "eg" : "intl"; const eurRate = rates.EUR;
+    const vlabel = (s: Service, v?: string) => { const x = variantOf(s, v); return x ? t(x.label) : ""; };
     return {
-      lang, cur, t, money, sv,
+      lang, cur, t, money, sv, market, eurRate, vlabel,
+      unit: (s, v) => unitEgp(s, market, eurRate, v), line: (s, it) => lineEgp(s, it, market, eurRate), from: (s) => fromEgp(s, market, eurRate),
       setLang: (l) => setLangS(l),
       setCur: (c) => { setCurS(c); try { localStorage.setItem("dd:cur", c); } catch { /* */ } }
     };
@@ -119,8 +147,20 @@ export function LangCurSwitch({ dark = false }: { dark?: boolean }) {
     <div className="flex items-center gap-1.5">
       <button onClick={() => setLang(lang === "en" ? "ar" : "en")} className={`${cls} min-w-[44px] font-arabic`} aria-label="Language">{lang === "en" ? "عربي" : "EN"}</button>
       <select value={cur} onChange={(e) => setCur(e.target.value as Cur)} className={cls} aria-label="Currency">
-        {(["EGP", "USD", "EUR"] as Cur[]).map((c) => <option key={c} value={c} className="text-navy">{c}</option>)}
+        <option value="EUR" className="text-navy">€ EUR</option><option value="USD" className="text-navy">$ USD</option><option value="EGP" className="text-navy">{lang === "ar" ? "ج.م · للمصريين" : "EGP · Egyptians"}</option>
       </select>
+    </div>
+  );
+}
+
+/** Big, obvious switch between the two price lists */
+export function MarketToggle({ className = "" }: { className?: string }) {
+  const { market, setCur, cur, lang } = useI18n();
+  const b = (on: boolean) => `flex-1 rounded-full px-3 py-2 text-sm font-bold transition ${on ? "bg-navy text-white shadow" : "text-navy/70"}`;
+  return (
+    <div className={`flex gap-1 rounded-full border border-navy/15 bg-white p-1 ${className}`} role="group" aria-label="Prices for">
+      <button type="button" className={b(market === "intl")} onClick={() => setCur(cur === "USD" ? "USD" : "EUR")}>{lang === "ar" ? "🌍 أجانب (€)" : "🌍 International (€)"}</button>
+      <button type="button" className={b(market === "eg")} onClick={() => setCur("EGP")}>{lang === "ar" ? "🇪🇬 مصريين ومقيمين" : "🇪🇬 Egyptians & residents"}</button>
     </div>
   );
 }

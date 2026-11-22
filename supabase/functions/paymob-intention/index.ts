@@ -2,6 +2,7 @@
 // Re-prices everything server-side: service prices, promo code and deposit % from the database.
 // Secrets: PAYMOB_SECRET_KEY, PAYMOB_PUBLIC_KEY, PAYMOB_INTEGRATION_IDS (comma separated: card, wallet…)
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { lineEgp } from "../_shared/pricing.ts"; // same file as src/lib/pricing.ts — keep both in sync
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 const PAYMOB = "https://accept.paymob.com";
@@ -15,6 +16,7 @@ Deno.serve(async (req) => {
     if (!rows?.length) throw new Error("Order not found");
     const { data: st } = await sb.from("settings").select("data").eq("id", "main").maybeSingle();
     const depositPct = st?.data?.depositPct ?? 25;
+    const baseRate = Number(st?.data?.rates?.EUR) || 56;
 
     // server-side prices
     const lines = [] as { id: string; b: any; line: number }[];
@@ -22,8 +24,11 @@ Deno.serve(async (req) => {
       const b = r.data;
       if (b.payment?.status === "paid") throw new Error("Already paid");
       const { data: svc } = await sb.from("services").select("data").eq("id", b.serviceId).maybeSingle();
-      const price = svc?.data?.price ?? b.total / Math.max(1, b.people);
-      lines.push({ id: r.id, b, line: price * b.people * (b.category === "rental" ? (b.days || 1) : 1) });
+      // the guest's rate is accepted if it is within 5% of the rate in Settings, so nobody can pay a made-up rate
+      const rate = b.fxRate && Math.abs(b.fxRate - baseRate) / baseRate <= 0.05 ? b.fxRate : baseRate;
+      const market = b.market === "eg" ? "eg" : "intl";
+      const line = svc?.data ? lineEgp(svc.data, { people: b.people, days: b.days, variant: b.variant }, market, rate) : b.total;
+      lines.push({ id: r.id, b, line });
     }
     const subtotal = lines.reduce((a, l) => a + l.line, 0);
     let discount = 0; const code = lines[0].b.promo;

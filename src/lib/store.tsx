@@ -22,7 +22,7 @@ export const paidAmount = (b: Booking) => {
 };
 export const balanceDue = (b: Booking) => (b.status === "cancelled" ? 0 : Math.max(0, b.total - (b.payment.amountPaid ?? (b.payment.status === "paid" ? b.total : 0))));
 
-export interface CartItem { key: string; serviceId: string; date: string; time: string; people: number; days: number }
+export interface CartItem { key: string; serviceId: string; date: string; time: string; people: number; days: number; variant?: string }
 export interface StaffUser { id: string; name: string; role: Role; via?: string }
 
 interface Data {

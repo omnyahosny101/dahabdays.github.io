@@ -92,7 +92,7 @@ function recommend(a: number[]): string {
 }
 
 export function Quiz({ compact = false }: { compact?: boolean }) {
-  const { t, sv, money } = useI18n();
+  const { t, sv, money, from } = useI18n();
   const { services } = useStore();
   const [answers, setAnswers] = useState<number[]>([]);
   const step = answers.length;
@@ -112,7 +112,7 @@ export function Quiz({ compact = false }: { compact?: boolean }) {
           <p className="hand text-[26px] text-ink/70">{t("Our pick for you")}</p>
           <p className="mt-1 font-display text-3xl font-black leading-tight">{sv(pick).name}</p>
           <p className="mt-2 text-ink/70">{sv(pick).short}</p>
-          <p className="mt-3 font-display text-2xl font-black text-navy">{money(pick.price)}</p>
+          <p className="mt-3 font-display text-2xl font-black text-navy">{money(from(pick))}</p>
           <div className="mt-5 flex flex-wrap gap-3"><BookButton id={pick.id} label="Book this" className="btn-coral" /><button className="btn-ghost" onClick={() => setAnswers([])}>{t("Start again")}</button></div>
         </div>
       )}

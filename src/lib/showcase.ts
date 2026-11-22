@@ -44,7 +44,7 @@ export function buildShowcase(services: Service[], settings: Settings) {
 
   const mk = (o: Partial<Booking> & { id: string; ref: string; serviceId: string; date: string; time: string; people: number }): Booking => {
     const s = svc(o.serviceId);
-    return { orderId: o.ref, serviceName: s.name, category: s.category, total: s.price * o.people, customer, status: "confirmed",
+    return { orderId: o.ref, serviceName: s.name, category: s.category, market: "eg", total: s.price * o.people, customer, status: "confirmed",
       payment: { method: "paymob", status: "unpaid", amountPaid: 0, history: [] }, createdAt: iso(o.date, 8), ...tag, ...o } as Booking;
   };
   const paid = (amt: number, d: string, method: "paymob" | "cash" = "paymob", h = 9) => ({ at: iso(d, h), amount: amt, method });

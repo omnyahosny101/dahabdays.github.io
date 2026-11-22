@@ -9,6 +9,7 @@ import { balanceDue, bookingRef, egpA as egp, hideMoney, normPhone, paidAmount, 
 import { ShowcaseCard } from "./Showcase";
 import { CashTab, CustomersTab, InventoryTab, PromosTab, RosterTab, ScheduleTab, TeamTab, BlogTab, exportFinanceXlsx, exportFinancePdf, waLink } from "./AdminOps";
 import { Mail, Phone, Users, ClipboardList, Package, Percent, Newspaper, Banknote, UserCog, CalendarRange, MessageCircle, Undo2, FileSpreadsheet, FileDown } from "lucide-react";
+import { lineEgp, type Market } from "../lib/pricing";
 import type { Booking, Category, Consent, Expense, MediaItem, MediaRole, SceneKey, Service } from "../lib/types";
 
 /* Categorical palette — fixed order, validated for colour-blind separation */
@@ -354,14 +355,19 @@ function WalkIn({ open, onClose, services, onSave }: { open: boolean; onClose: (
   const [sid, setSid] = useState(services[0]?.id); const [date, setDate] = useState(today()); const [people, setPeople] = useState(1);
   const [name, setName] = useState(""); const [phone, setPhone] = useState(""); const [paid, setPaid] = useState(true);
   const s = services.find((x) => x.id === sid);
+  const [market, setMarket] = useState<Market>("intl"); const [variant, setVariant] = useState<string | undefined>();
+  const rate = useStore().settings.rates?.EUR || 56;
+  const totalW = s ? lineEgp(s, { people, days: 1, variant }, market, rate) : 0;
   return (
-    <Sheet open={open} onClose={onClose}><form className="space-y-4 p-6 sm:p-8" onSubmit={(e) => { e.preventDefault(); if (!s || !name) return; onSave({ id: uid(), ref: bookingRef(), serviceId: s.id, serviceName: s.name, category: s.category, date, time: s.slots[0], people, total: s.price * people, customer: { name, email: "", phone, country: "" }, status: "confirmed", payment: { method: "cash", status: paid ? "paid" : "unpaid", paidAt: paid ? new Date().toISOString() : undefined, amountPaid: paid ? s.price * people : 0, history: paid ? [{ at: new Date().toISOString(), amount: s.price * people, method: "cash" }] : [] }, createdAt: new Date().toISOString() }); }}>
+    <Sheet open={open} onClose={onClose}><form className="space-y-4 p-6 sm:p-8" onSubmit={(e) => { e.preventDefault(); if (!s || !name) return; onSave({ id: uid(), ref: bookingRef(), serviceId: s.id, serviceName: s.name + (s.variants?.length ? " — " + (s.variants.find((v) => v.id === variant) || s.variants[0]).label : ""), variant, market, category: s.category, date, time: s.slots[0], people, total: totalW, customer: { name, email: "", phone, country: "" }, status: "confirmed", payment: { method: "cash", status: paid ? "paid" : "unpaid", paidAt: paid ? new Date().toISOString() : undefined, amountPaid: paid ? s.price * people : 0, history: paid ? [{ at: new Date().toISOString(), amount: s.price * people, method: "cash" }] : [] }, createdAt: new Date().toISOString() }); }}>
       <h3 className="text-2xl font-extrabold">Walk-in booking</h3>
-      <select className="input" value={sid} onChange={(e) => setSid(e.target.value)}>{services.map((x) => <option key={x.id} value={x.id}>{x.name} — {egp(x.price)}</option>)}</select>
+      <select className="input" value={sid} onChange={(e) => { setSid(e.target.value); setVariant(undefined); }}>{services.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+      {!!s?.variants?.length && <select className="input" value={variant || s.variants[0].id} onChange={(e) => setVariant(e.target.value)}>{s.variants.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}</select>}
+      <div className="flex gap-2">{(["intl", "eg"] as Market[]).map((m) => <button key={m} type="button" onClick={() => setMarket(m)} className={`btn flex-1 border-2 ${market === m ? "border-navy bg-navy text-white" : "border-navy/10"}`}>{m === "eg" ? "Egyptian / resident" : "International"}</button>)}</div>
       <div className="grid grid-cols-2 gap-3"><input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} /><input type="number" min={1} className="input" value={people} onChange={(e) => setPeople(Math.max(1, +e.target.value))} aria-label="People" /></div>
       <input className="input" placeholder="Guest name" value={name} onChange={(e) => setName(e.target.value)} /><input className="input" placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
       <label className="flex items-center gap-3"><input type="checkbox" className="h-5 w-5 accent-[#06485a]" checked={paid} onChange={(e) => setPaid(e.target.checked)} /> Paid in cash now</label>
-      <p className="font-semibold">Total {egp((s?.price || 0) * people)}</p>
+      <p className="font-semibold">Total {egp(totalW)}{market === "intl" ? ` (at ${rate} EGP/€)` : ""}</p>
       <button className="btn-sea w-full">Save booking</button>
     </form></Sheet>
   );
@@ -525,7 +531,7 @@ function Services() {
         <ul className="divide-y">{services.filter((s) => s.category === c).map((s) => <li key={s.id} className="flex flex-wrap items-center gap-4 py-3">
           <span className="h-12 w-16 shrink-0 overflow-hidden rounded-xl"><Visual scene={s.scene} url={s.mediaUrl} label={s.name} /></span>
           <span className="min-w-[10rem] flex-1"><span className={`block font-semibold ${s.active ? "" : "text-ink/40 line-through"}`}>{s.name}</span><span className="text-sm text-ink/55">{s.duration}</span></span>
-          <span className="price font-bold text-sea">{egp(s.price)}</span>
+          <span className="price font-bold text-sea">{egp(s.price)}{s.priceEur != null ? ` · €${s.priceEur}` : ""}{s.variants?.length ? ` · ${s.variants.length} options` : ""}</span>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="h-5 w-5 accent-[#06485a]" checked={s.active} onChange={(e) => put("services", { ...s, active: e.target.checked })} /> On site</label>
           <button className="btn-ghost text-sm" onClick={() => setEdit(s)}>Edit</button>
         </li>)}</ul>
@@ -541,12 +547,26 @@ function ServiceForm({ s: init, media, onSave }: { s: Service; media: MediaItem[
   const [slots, setSlots] = useState(init.slots.join(", "));
   const f = (k: keyof Service) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setS({ ...s, [k]: e.target.type === "number" ? +e.target.value : e.target.value });
   return (
-    <form className="space-y-4 p-6 sm:p-8" onSubmit={(e) => { e.preventDefault(); if (!s.name) return; onSave({ ...s, includes: inc.split("\n").map((x) => x.trim()).filter(Boolean), slots: slots.split(",").map((x) => x.trim()).filter(Boolean) }); }}>
+    <form className="space-y-4 p-6 sm:p-8" onSubmit={(e) => { e.preventDefault(); if (!s.name) return; onSave({ ...s, ...(s.variants?.length ? { price: s.variants[0].egp, priceEur: s.variants[0].eur } : {}), includes: inc.split("\n").map((x) => x.trim()).filter(Boolean), slots: slots.split(",").map((x) => x.trim()).filter(Boolean) }); }}>
       <h3 className="text-2xl font-extrabold">{init.name || "New service"}</h3>
       <div className="grid gap-4 sm:grid-cols-2">
         <label><span className="label">Name</span><input className="input" value={s.name} onChange={f("name")} /></label>
         <label><span className="label">Category</span><select className="input" value={s.category} onChange={f("category")}>{CAT_ORDER.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}</select></label>
-        <label><span className="label">Price (EGP)</span><input type="number" min={0} className="input" value={s.price} onChange={f("price")} /></label>
+        <label><span className="label">Egyptians & residents (EGP)</span><input type="number" min={0} className="input" value={s.price} onChange={f("price")} disabled={!!s.variants?.length} /></label>
+        <label><span className="label">International (EUR)</span><input type="number" min={0} className="input" value={s.priceEur ?? ""} onChange={(e) => setS({ ...s, priceEur: e.target.value === "" ? undefined : +e.target.value })} disabled={!!s.variants?.length} /></label>
+        {s.category === "rental" && <><label><span className="label">Week price, Egyptians (EGP)</span><input type="number" min={0} className="input" value={s.priceWeek ?? ""} onChange={(e) => setS({ ...s, priceWeek: e.target.value === "" ? undefined : +e.target.value })} /></label>
+          <label><span className="label">Week price, international (EUR)</span><input type="number" min={0} className="input" value={s.priceWeekEur ?? ""} onChange={(e) => setS({ ...s, priceWeekEur: e.target.value === "" ? undefined : +e.target.value })} /></label></>}
+        <div className="sm:col-span-2 rounded-2xl border border-navy/10 p-4">
+          <div className="flex items-center justify-between gap-2"><p className="font-bold">Price options <span className="font-normal text-ink/55">(with / without equipment, Coach Attar, package length)</span></p>
+            <button type="button" className="btn-ghost text-sm" onClick={() => setS({ ...s, variants: [...(s.variants || []), { id: uid(), label: "New option", eur: s.priceEur || 0, egp: s.price }] })}><Plus size={14} /> Add</button></div>
+          {(s.variants || []).map((v, k) => <div key={v.id} className="mt-2 grid grid-cols-[1fr_80px_90px_auto] items-center gap-2">
+            <input className="input" value={v.label} onChange={(e) => setS({ ...s, variants: s.variants!.map((x, j) => (j === k ? { ...x, label: e.target.value } : x)) })} aria-label="Option name" />
+            <input type="number" className="input" value={v.eur} onChange={(e) => setS({ ...s, variants: s.variants!.map((x, j) => (j === k ? { ...x, eur: +e.target.value } : x)) })} aria-label="EUR" title="International (EUR)" />
+            <input type="number" className="input" value={v.egp} onChange={(e) => setS({ ...s, variants: s.variants!.map((x, j) => (j === k ? { ...x, egp: +e.target.value } : x)) })} aria-label="EGP" title="Egyptians (EGP)" />
+            <button type="button" className="btn px-2 text-ink/40 hover:text-red" aria-label="Remove option" onClick={() => setS({ ...s, variants: s.variants!.filter((_, j) => j !== k) })}><Trash2 size={16} /></button>
+          </div>)}
+          {!!s.variants?.length && <p className="mt-2 text-xs text-ink/55">Columns: option · € international · EGP Egyptians. The first option is the "from" price.</p>}
+        </div>
         <label><span className="label">Unit</span><input className="input" value={s.unit} onChange={f("unit")} placeholder="per person" /></label>
         <label><span className="label">Duration</span><input className="input" value={s.duration} onChange={f("duration")} /></label>
         <label><span className="label">Badge (optional)</span><input className="input" value={s.badge || ""} onChange={f("badge")} /></label>
@@ -640,7 +660,7 @@ function SettingsTab() {
           <label><span className="label">EGP per 1 USD (fallback)</span><input type="number" step="0.01" className="input" value={s.rates.USD} onChange={(e) => setS({ ...s, rates: { ...s.rates, USD: +e.target.value } })} /></label>
           <label><span className="label">EGP per 1 EUR (fallback)</span><input type="number" step="0.01" className="input" value={s.rates.EUR} onChange={(e) => setS({ ...s, rates: { ...s.rates, EUR: +e.target.value } })} /></label>
         </div>
-        <p className="mt-3 text-sm text-ink/60">Prices are stored and charged in EGP. USD/EUR are shown for guidance using live rates; these fallback rates are used when live rates can't load.</p>
+        <p className="mt-3 text-sm text-ink/60">Egyptians see fixed EGP prices. International guests see the euro price list; they are charged in EGP at the live rate (these fallback rates are used when live rates can't load, and the payment server accepts the guest's rate only within 5% of the EUR rate here — keep it roughly current).</p>
       </Card>
       <Card title="Marketing and tracking">
         <div className="grid gap-4 sm:grid-cols-2">

@@ -3,9 +3,10 @@ import { ACTION_PERMS, PAGE_PERMS } from "./types";
 import { SERVICE_STOCK, STOCK } from "./stock";
 
 /**
- * Default catalog. Prices are starting values in EGP — the owner edits them
- * (and everything else here) from Dashboard › Services. Once edited, the
- * stored version replaces this list.
+ * Default catalog, from the printed Dahab Days price list.
+ *  priceEur = international visitors (euro, as printed) · price = Egyptians & residents (EGP, about 15% less)
+ *  variants = price options (with / without equipment, with Coach Attar, package length)
+ * The owner edits everything here from Dashboard › Services; once edited, the stored version replaces this list.
  */
 const s = (x: Partial<Service> & Pick<Service, "id" | "category" | "name" | "price">, i: number): Service => ({
   short: "", description: "", includes: [], duration: "", unit: "per person", scene: "reef",
@@ -13,108 +14,78 @@ const s = (x: Partial<Service> & Pick<Service, "id" | "category" | "name" | "pri
 });
 
 export const DEFAULT_SERVICES: Service[] = [
-  // ——— Certification courses ———
-  { id: "dsd", category: "course", name: "Discover Scuba — intro dive", price: 3000, duration: "Half day · 1 dive",
-    short: "Your first breath underwater, one-to-one with an instructor.",
-    description: "A short briefing on land, skills practice in shallow water, then a guided dive on the Lighthouse reef to a maximum of 12 m. No experience needed — just basic comfort in water.",
-    includes: ["Instructor 1:2 ratio", "Full equipment", "Theory briefing", "Photos on request"], scene: "diver", minAge: 10, level: "Beginner", badge: "First timers", slots: ["09:00", "13:00"], capacity: 4 },
-  { id: "owd", category: "course", name: "Open Water Diver", price: 20000, duration: "3–4 days · 4 open-water dives",
-    short: "The internationally recognised licence to dive anywhere in the world to 18 m.",
-    description: "Theory (eLearning or classroom), confined-water skills, and four open-water training dives on Dahab's calm shore sites. You finish certified to dive with a buddy to 18 m.",
-    includes: ["Digital learning materials", "International certification card", "All equipment", "4 open-water dives", "Logbook"], scene: "classroom", minAge: 10, level: "Beginner", badge: "Most booked", capacity: 4 },
-  { id: "aowd", category: "course", name: "Advanced Open Water", price: 18000, duration: "2 days · 5 adventure dives",
-    short: "Deep, navigation and three adventures — including the Canyon.",
-    description: "Five adventure dives: Deep and Underwater Navigation plus three electives such as the Canyon, Bells to Blue Hole, night or buoyancy. Certifies you to 30 m.",
-    includes: ["5 adventure dives", "Certification card", "Equipment", "Transport to dive sites"], scene: "canyon", minAge: 12, level: "Certified", capacity: 4 },
-  { id: "combo", category: "course", name: "Open Water + Advanced package", price: 30000, duration: "5–6 days · 9 dives",
-    short: "Zero to 30 m in under a week. Our best-value bundle.",
-    description: "Both courses back to back with the same instructor. Finish with an Advanced dive at Bells to Blue Hole — the classic Dahab graduation dive.",
-    includes: ["Both certification cards", "9 dives", "Equipment", "Transport", "Lunch at Blue Hole"], scene: "bluehole", minAge: 12, level: "Beginner", badge: "Best value", capacity: 4 },
-  { id: "rescue", category: "course", name: "Rescue Diver + First Aid", price: 24000, duration: "3–4 days",
-    short: "Learn to prevent and manage problems — the course divers call the most rewarding.",
-    description: "Self-rescue, recognising diver stress, emergency management and rescue scenarios, with Emergency First Response (CPR & first aid) included.",
-    includes: ["Rescue + EFR certification", "Scenarios & dives", "Equipment", "Pocket mask"], scene: "reef", minAge: 12, level: "Advanced", capacity: 4 },
-  { id: "nitrox", category: "course", name: "Enriched Air (Nitrox)", price: 8500, duration: "1 day · 2 dives",
-    short: "Longer no-stop times and shorter surface intervals.",
-    description: "Theory, analysing your own tank and two Nitrox dives. The most popular specialty in Dahab.",
-    includes: ["Certification card", "2 Nitrox fills", "Equipment"], scene: "gear", minAge: 12, level: "Certified", capacity: 6 },
-  { id: "refresh", category: "course", name: "Scuba Refresher", price: 3500, duration: "Half day · 1 dive",
-    short: "Haven't dived in a while? Brush up your skills first.",
-    description: "Review of skills and equipment set-up in shallow water, followed by a relaxed reef dive.",
-    includes: ["Instructor", "Equipment", "1 dive"], scene: "turtle", level: "Certified", capacity: 4 },
-  { id: "dm", category: "course", name: "Divemaster internship", price: 55000, duration: "4–6 weeks",
-    short: "Your first professional level. Live in Dahab and train with our team.",
-    description: "Mentored internship covering dive leadership, assisting courses, mapping a dive site and stamina tests. Price excludes membership fees.",
-    includes: ["Unlimited training dives", "Mentoring", "Equipment during training"], scene: "bells", minAge: 18, level: "Pro", badge: "Pro", slots: ["Flexible"], capacity: 2 },
+  // ——— Discover Scuba & certification courses (courses include the full equipment) ———
+  { id: "dsd", category: "course", name: "Discover Scuba Diving — 1 dive", duration: "Half day · 1 dive at the Lighthouse", short: "Your first breath underwater — one dive at the Lighthouse with transport.", description: "A short briefing on land, skills practice in shallow water, then a guided dive on the Lighthouse reef to a maximum of 12 m. No experience needed — just basic comfort in water. Full equipment and transport included.", includes: ["1 dive at the Lighthouse", "Transport", "Full equipment", "Instructor briefing"], scene: "diver", minAge: 10, level: "Beginner", badge: "First timers", slots: ["09:00", "13:00"], capacity: 4, variants: [{"id": "std", "label": "With our instructor", "eur": 45, "egp": 2100}, {"id": "attar", "label": "With Coach Attar ★", "eur": 60, "egp": 2900}], priceEur: 45, price: 2100 },
+  { id: "dsd-gold", category: "course", name: "Discover Scuba Diving — Golden", duration: "1 day · 2 dives + eLearning", short: "Two dives, eLearning and a certificate — the full first-timer experience.", description: "Do the theory online before you arrive, then two guided dives with your instructor. You leave with a Discover Scuba certificate that counts towards your Open Water course.", includes: ["2 dives", "eLearning", "Certificate", "Full equipment", "Transport"], scene: "reef", minAge: 10, level: "Beginner", badge: "Golden", slots: ["09:00"], capacity: 4, variants: [{"id": "std", "label": "With our instructor", "eur": 90, "egp": 4300}, {"id": "attar", "label": "With Coach Attar ★", "eur": 100, "egp": 4800}], priceEur: 90, price: 4300 },
+  { id: "refresh", category: "course", name: "Scuba Review", duration: "Half day · 1 dive", short: "Haven't dived in a while? Brush up your skills first.", description: "Review of skills and equipment set-up in shallow water, followed by a relaxed reef dive.", includes: ["Instructor", "Full equipment", "1 dive", "Transport"], scene: "turtle", level: "Certified", capacity: 4, variants: [{"id": "std", "label": "With our instructor", "eur": 55, "egp": 2600}, {"id": "attar", "label": "With Coach Attar ★", "eur": 60, "egp": 2900}], priceEur: 55, price: 2600 },
+  { id: "owd", category: "course", name: "Open Water Diver", duration: "3–4 days · 4 open-water dives", short: "The internationally recognised licence to dive anywhere in the world to 18 m.", description: "Theory (eLearning or classroom), confined-water skills, and four open-water training dives on Dahab's calm shore sites. You finish certified to dive with a buddy to 18 m.", includes: ["Digital learning materials", "International certification card", "Full equipment", "4 open-water dives", "Logbook"], scene: "classroom", minAge: 10, level: "Beginner", badge: "Most booked", capacity: 4, variants: [{"id": "std", "label": "With our instructor", "eur": 420, "egp": 20000}, {"id": "attar", "label": "With Coach Attar ★", "eur": 460, "egp": 22000}], priceEur: 420, price: 20000 },
+  { id: "aowd", category: "course", name: "Advanced Open Water", duration: "2 days · 5 adventure dives", short: "Deep, navigation and three adventures — including the Canyon.", description: "Five adventure dives: Deep and Underwater Navigation plus three electives such as the Canyon, Bells to Blue Hole, night or buoyancy. Certifies you to 30 m.", includes: ["5 adventure dives", "Certification card", "Full equipment", "Transport to dive sites"], scene: "canyon", minAge: 12, level: "Certified", capacity: 4, variants: [{"id": "std", "label": "With our instructor", "eur": 350, "egp": 16500}, {"id": "attar", "label": "With Coach Attar ★", "eur": 380, "egp": 18000}], priceEur: 350, price: 16500 },
+  { id: "combo", category: "course", name: "Open Water + Advanced package", duration: "5–6 days · 9 dives", short: "Zero to 30 m in under a week. Our best-value bundle.", description: "Both courses back to back with the same instructor. Finish with an Advanced dive at Bells to Blue Hole — the classic Dahab graduation dive.", includes: ["Both certification cards", "9 dives", "Full equipment", "Transport"], scene: "bluehole", minAge: 12, level: "Beginner", badge: "Best value", capacity: 4, variants: [{"id": "std", "label": "With our instructor", "eur": 630, "egp": 30000}, {"id": "attar", "label": "With Coach Attar ★", "eur": 690, "egp": 33000}], priceEur: 630, price: 30000 },
+  { id: "rescue", category: "course", name: "Rescue Diver + First Aid", duration: "3–4 days", short: "Learn to prevent and manage problems — the course divers call the most rewarding.", description: "Self-rescue, recognising diver stress, emergency management and rescue scenarios, with Emergency First Response (CPR & first aid) included.", includes: ["Rescue + EFR certification", "Scenarios & dives", "Full equipment", "Pocket mask"], scene: "reef", minAge: 12, level: "Advanced", capacity: 4, variants: [{"id": "std", "label": "With our instructor", "eur": 380, "egp": 18000}, {"id": "attar", "label": "With Coach Attar ★", "eur": 410, "egp": 19500}], priceEur: 380, price: 18000 },
+  { id: "nitrox", category: "course", name: "Enriched Air (Nitrox)", duration: "1 day · 2 dives", short: "Longer no-stop times and shorter surface intervals.", description: "Theory, analysing your own tank and two Nitrox dives. The most popular specialty in Dahab.", includes: ["Certification card", "2 Nitrox fills", "Full equipment"], scene: "gear", minAge: 12, level: "Certified", capacity: 6, priceEur: 160, price: 7600 },
+  { id: "dm", category: "course", name: "Divemaster internship", duration: "4–6 weeks", short: "Your first professional level. Live in Dahab and train with Coach Attar's team.", description: "Mentored internship covering dive leadership, assisting courses, mapping a dive site and stamina tests. Price excludes membership fees.", includes: ["Unlimited training dives", "Mentoring", "Equipment during training"], scene: "bells", minAge: 18, level: "Pro", badge: "Pro", slots: ["Flexible"], capacity: 2, priceEur: 950, price: 45000 },
 
-  // ——— Guided / fun dives ———
-  { id: "shore", category: "fun", name: "Guided shore dive", price: 1800, unit: "per dive", duration: "1 dive · ~50 min",
-    short: "Lighthouse, Eel Garden, Islands — reef straight from the beach.",
-    description: "Dahab is famous for shore diving. Your guide picks the site for the day's conditions and your level.",
-    includes: ["Guide", "Tank & weights", "Transport"], scene: "reef", level: "Certified", slots: ["08:30", "11:00", "14:00"] },
-  { id: "bh-dive", category: "fun", name: "Bells to Blue Hole dive day", price: 4200, duration: "Full day · 2 dives",
-    short: "Drop through the Bells chimney, drift along the wall, finish across the Blue Hole saddle.",
-    description: "Dahab's signature dive followed by a second dive at Blue Hole. Advanced certification (or deep experience) recommended for the Bells.",
-    includes: ["2 guided dives", "Transport", "Lunch at Blue Hole", "Park fees"], scene: "bells", level: "Advanced", badge: "Signature" },
-  { id: "canyon-dive", category: "fun", name: "Canyon dive", price: 2200, unit: "per dive", duration: "1 dive",
-    short: "Swim through a narrow crack in the reef lit by shafts of sunlight.",
-    description: "A dramatic reef canyon a short drive north of town. Recommended for Advanced divers.",
-    includes: ["Guide", "Tank & weights", "Transport"], scene: "canyon", level: "Advanced" },
-  { id: "pack10", category: "fun", name: "10-dive package", price: 15000, unit: "package", duration: "Use within 7 days",
-    short: "Best price per dive for certified divers on holiday.",
-    description: "Ten guided dives at the sites of your choice, including Blue Hole and Canyon.",
-    includes: ["10 dives", "Guide", "Tanks & weights", "Transport"], scene: "turtle", level: "Certified", slots: ["08:30"] },
+  // ——— Guided dives & packages (taxi from the center to the dive site included · nature reserve fees not included) ———
+  { id: "shore", category: "fun", name: "Guided dive — Lighthouse", unit: "per dive", duration: "1 dive · ~50 min", short: "Dahab's house reef, straight from the beach in town.", description: "An easy, beautiful shore dive on the Lighthouse reef with one of our guides — perfect for your first dive in Dahab or a relaxed afternoon.", includes: ["Guide", "Tank & weights", "Equipment (if chosen)"], scene: "reef", level: "Certified", slots: ["08:30", "11:00", "14:00"], variants: [{"id": "eqp", "label": "With equipment", "eur": 45, "egp": 2100}, {"id": "own", "label": "Own equipment", "eur": 35, "egp": 1700}], priceEur: 45, price: 2100 },
+  { id: "canyon-dive", category: "fun", name: "Guided dive — long distance site", unit: "per dive", duration: "1 dive", short: "Canyon, Blue Hole, Islands or Eel Garden — the guide picks the best site for the day.", description: "One guided dive at a site outside town. Taxi from the center to the dive site is included.", includes: ["Guide", "Taxi to the site", "Tank & weights", "Equipment (if chosen)"], scene: "canyon", level: "Certified", slots: ["08:30", "13:00"], variants: [{"id": "eqp", "label": "With equipment", "eur": 60, "egp": 2900}, {"id": "own", "label": "Own equipment", "eur": 55, "egp": 2600}], priceEur: 60, price: 2900 },
+  { id: "bh-dive", category: "fun", name: "2 guided dives — long distance", duration: "Half / full day · 2 dives", short: "Two dives at the famous sites — Bells to Blue Hole is the classic.", description: "Two guided dives at long-distance sites such as Bells to Blue Hole and the Canyon. Advanced certification (or deep experience) recommended for the Bells.", includes: ["2 guided dives", "Taxi to the sites", "Tanks & weights", "Equipment (if chosen)"], scene: "bells", level: "Advanced", badge: "Signature", variants: [{"id": "eqp", "label": "With equipment", "eur": 120, "egp": 5700}, {"id": "own", "label": "Own equipment", "eur": 100, "egp": 4800}], priceEur: 120, price: 5700 },
+  { id: "pack10", category: "fun", name: "Dive packages — 1 to 10 days", unit: "per package", duration: "2 dives a day", short: "Two dives a day for 1 to 10 days — the more days, the better the price.", description: "Guided dives at the sites of your choice, including Blue Hole and the Canyon, two a day. Choose with equipment, your own equipment, or diving with Coach Attar.", includes: ["2 dives per day", "Guide", "Taxi to the sites", "Tanks & weights"], scene: "turtle", level: "Certified", badge: "Best price per dive", slots: ["08:30"], variants: [{"id": "1d-eqp", "label": "1 day · 2 dives · with equipment", "eur": 100, "egp": 4800, "group": "1 day · 2 dives"}, {"id": "1d-own", "label": "1 day · 2 dives · own equipment", "eur": 90, "egp": 4300, "group": "1 day · 2 dives"}, {"id": "1d-attar", "label": "1 day · 2 dives · With Coach Attar ★", "eur": 120, "egp": 5700, "group": "1 day · 2 dives"}, {"id": "2d-eqp", "label": "2 days · 4 dives · with equipment", "eur": 185, "egp": 8800, "group": "2 days · 4 dives"}, {"id": "2d-own", "label": "2 days · 4 dives · own equipment", "eur": 170, "egp": 8100, "group": "2 days · 4 dives"}, {"id": "2d-attar", "label": "2 days · 4 dives · With Coach Attar ★", "eur": 200, "egp": 9500, "group": "2 days · 4 dives"}, {"id": "3d-eqp", "label": "3 days · 6 dives · with equipment", "eur": 250, "egp": 12000, "group": "3 days · 6 dives"}, {"id": "3d-own", "label": "3 days · 6 dives · own equipment", "eur": 230, "egp": 11000, "group": "3 days · 6 dives"}, {"id": "3d-attar", "label": "3 days · 6 dives · With Coach Attar ★", "eur": 275, "egp": 13000, "group": "3 days · 6 dives"}, {"id": "4d-eqp", "label": "4 days · 8 dives · with equipment", "eur": 290, "egp": 14000, "group": "4 days · 8 dives"}, {"id": "4d-own", "label": "4 days · 8 dives · own equipment", "eur": 270, "egp": 13000, "group": "4 days · 8 dives"}, {"id": "4d-attar", "label": "4 days · 8 dives · With Coach Attar ★", "eur": 325, "egp": 15500, "group": "4 days · 8 dives"}, {"id": "5d-eqp", "label": "5 days · 10 dives · with equipment", "eur": 325, "egp": 15500, "group": "5 days · 10 dives"}, {"id": "5d-own", "label": "5 days · 10 dives · own equipment", "eur": 300, "egp": 14500, "group": "5 days · 10 dives"}, {"id": "5d-attar", "label": "5 days · 10 dives · With Coach Attar ★", "eur": 350, "egp": 16500, "group": "5 days · 10 dives"}, {"id": "6d-eqp", "label": "6 days · 12 dives · with equipment", "eur": 350, "egp": 16500, "group": "6 days · 12 dives"}, {"id": "6d-own", "label": "6 days · 12 dives · own equipment", "eur": 330, "egp": 15500, "group": "6 days · 12 dives"}, {"id": "6d-attar", "label": "6 days · 12 dives · With Coach Attar ★", "eur": 400, "egp": 19000, "group": "6 days · 12 dives"}, {"id": "8d-eqp", "label": "8 days · 16 dives · with equipment", "eur": 450, "egp": 21500, "group": "8 days · 16 dives"}, {"id": "8d-own", "label": "8 days · 16 dives · own equipment", "eur": 430, "egp": 20500, "group": "8 days · 16 dives"}, {"id": "8d-attar", "label": "8 days · 16 dives · With Coach Attar ★", "eur": 475, "egp": 22500, "group": "8 days · 16 dives"}, {"id": "10d-eqp", "label": "10 days · 20 dives · with equipment", "eur": 550, "egp": 26000, "group": "10 days · 20 dives"}, {"id": "10d-own", "label": "10 days · 20 dives · own equipment", "eur": 530, "egp": 25000, "group": "10 days · 20 dives"}, {"id": "10d-attar", "label": "10 days · 20 dives · With Coach Attar ★", "eur": 575, "egp": 27500, "group": "10 days · 20 dives"}], priceEur: 100, price: 4800 },
 
-  // ——— Dahab trips ———
-  { id: "bh-snorkel", category: "tour", name: "Blue Hole & Bells snorkel day", price: 1500, duration: "6 hours",
+  // ——— Dahab trips (estimated — not on the printed price list) ———
+  { id: "bh-snorkel", category: "tour", name: "Blue Hole & Bells snorkel day", price: 1200, priceEur: 25, duration: "6 hours",
     short: "Snorkel the edge of the world's most famous sinkhole.",
     description: "Pick-up from your hotel, snorkel the coral rim of the Blue Hole and the reef at Bells, lunch at a beach café, and free time in the sun.",
     includes: ["Hotel pick-up", "Snorkel set", "Guide", "Lunch", "Park entrance"], scene: "bluehole", minAge: 6, badge: "Classic", slots: ["09:30"], capacity: 14 },
-  { id: "pools", category: "tour", name: "Three Pools & Wadi Gnai", price: 1300, duration: "5 hours",
+  { id: "pools", category: "tour", name: "Three Pools & Wadi Gnai", price: 950, priceEur: 20, duration: "5 hours",
     short: "Three natural coral pools with sandy bottoms, then a palm oasis in the wadi.",
     description: "South of town, three shallow lagoons ringed by coral make the calmest snorkelling in Dahab. Add a horse or camel ride along the coast, then visit the small oasis of Wadi Gnai.",
     includes: ["Transport", "Snorkel set", "Guide", "Bedouin tea"], scene: "pools", minAge: 5, slots: ["09:00", "14:00"], capacity: 14 },
-  { id: "lagoon", category: "tour", name: "Blue Lagoon & Ras Abu Galum", price: 2200, duration: "Full day",
+  { id: "lagoon", category: "tour", name: "Blue Lagoon & Ras Abu Galum", price: 1900, priceEur: 40, duration: "Full day",
     short: "Boat from Blue Hole into a protected area with no road access.",
     description: "Take a small boat north from Blue Hole to the Ras Abu Galum protectorate, snorkel untouched reef and relax at the turquoise Blue Lagoon in a Bedouin camp.",
     includes: ["Transport to Blue Hole", "Boat both ways", "Snorkel set", "Lunch", "Protectorate fees"], scene: "lagoon", minAge: 6, slots: ["09:00"], capacity: 12 },
-  { id: "tawilat", category: "tour", name: "Gabal El Tawilat night", price: 1800, duration: "Evening · 5 hours",
+  { id: "tawilat", category: "tour", name: "Gabal El Tawilat night", price: 1400, priceEur: 30, duration: "Evening · 5 hours",
     short: "4×4 into the mountains, the suspension bridge, Bedouin tea and a sky full of stars.",
     description: "A winding desert drive into the Tawilat mountains, a walk across the hanging bridge between peaks, then Bedouin tea, dinner and music around the fire under the stars.",
     includes: ["4×4 transport", "Guide", "Bedouin dinner & tea", "Camp entrance"], scene: "tawilat", requiresConsent: false, badge: "After dark", slots: ["17:00"], capacity: 16 },
-  { id: "ghazala", category: "tour", name: "Wadi El Ghazala sunset safari", price: 1600, duration: "4 hours",
+  { id: "ghazala", category: "tour", name: "Wadi El Ghazala sunset safari", price: 1200, priceEur: 25, duration: "4 hours",
     short: "Golden canyon walls, quiet sand and sunset tea with a Bedouin guide.",
     description: "Drive out into the desert valleys behind Dahab, walk between the rock walls with a local guide and watch the sunset over the mountains with tea on the fire.",
     includes: ["4×4 transport", "Bedouin guide", "Tea & snacks"], scene: "ghazala", requiresConsent: false, slots: ["14:30"], capacity: 16 },
-  { id: "sinai", category: "tour", name: "Mount Sinai sunrise & St Catherine", price: 2500, duration: "Overnight · 10 hours",
+  { id: "sinai", category: "tour", name: "Mount Sinai sunrise & St Catherine", price: 1700, priceEur: 35, duration: "Overnight · 10 hours",
     short: "Night hike up the mountain to watch the sun rise over Sinai.",
     description: "Leave Dahab late at night, hike with a Bedouin guide under the stars and reach the summit for sunrise. Visit St Catherine's Monastery on the way back when it is open.",
     includes: ["Transport", "Bedouin guide", "Entrance fees"], scene: "sinai", requiresConsent: false, slots: ["23:00"], capacity: 14 },
-  { id: "colored", category: "tour", name: "Colored Canyon trek", price: 2500, duration: "Full day",
+  { id: "colored", category: "tour", name: "Colored Canyon trek", price: 1900, priceEur: 40, duration: "Full day",
     short: "Squeeze between canyon walls striped in red, gold and violet.",
     description: "A jeep ride into the desert followed by an easy-to-moderate trek through the Colored Canyon, with lunch at a Bedouin camp.",
     includes: ["4×4 transport", "Guide", "Lunch", "Entrance"], scene: "wadi", requiresConsent: false, slots: ["08:00"], capacity: 14 },
-  { id: "weshwash", category: "tour", name: "Wadi El Weshwash pools", price: 2000, duration: "Full day",
+  { id: "weshwash", category: "tour", name: "Wadi El Weshwash pools", price: 1700, priceEur: 35, duration: "Full day",
     short: "Hike to fresh-water pools hidden between granite walls.",
     description: "A desert drive and a rocky hike to natural pools carved by flash floods — swim in fresh water in the middle of the mountains.",
     includes: ["4×4 transport", "Guide", "Lunch"], scene: "wadi", requiresConsent: false, slots: ["07:30"], capacity: 12 },
 
-  // ——— Rentals ———
-  { id: "r-full", category: "rental", name: "Full scuba set", price: 1200, unit: "per day", duration: "Daily", short: "BCD, regulator, wetsuit, mask, fins, computer.", description: "Everything except the tank. Serviced and rinsed after every use.", includes: ["BCD", "Regulator + octopus", "Wetsuit 3/5 mm", "Mask & fins", "Dive computer"], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20, badge: "Save 30%" },
-  { id: "r-bcd", category: "rental", name: "BCD", price: 400, unit: "per day", duration: "Daily", short: "Jacket-style, sizes XS–XXL.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20 },
-  { id: "r-reg", category: "rental", name: "Regulator set", price: 450, unit: "per day", duration: "Daily", short: "1st & 2nd stage, octopus, SPG.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20 },
-  { id: "r-suit", category: "rental", name: "Wetsuit 3 mm / 5 mm", price: 250, unit: "per day", duration: "Daily", short: "Choose 5 mm in winter months.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 30 },
-  { id: "r-comp", category: "rental", name: "Dive computer", price: 400, unit: "per day", duration: "Daily", short: "Air & Nitrox compatible.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 12 },
-  { id: "r-mask", category: "rental", name: "Mask, snorkel & fins", price: 150, unit: "per day", duration: "Daily", short: "Also for snorkellers.", description: "", includes: [], scene: "pools", requiresConsent: false, slots: ["08:00"], capacity: 40 },
-  { id: "r-torch", category: "rental", name: "Dive torch", price: 200, unit: "per day", duration: "Daily", short: "For night dives and the Canyon.", description: "", includes: [], scene: "night", requiresConsent: false, slots: ["08:00"], capacity: 10 },
-  { id: "r-tank", category: "rental", name: "Tank fill — air / Nitrox", price: 250, unit: "per fill", duration: "Per fill", short: "12 L or 15 L aluminium. Nitrox +150 EGP.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 40 },
-  { id: "r-cam", category: "rental", name: "Action camera + housing", price: 600, unit: "per day", duration: "Daily", short: "Film your own reel underwater.", description: "", includes: [], scene: "turtle", requiresConsent: false, slots: ["08:00"], capacity: 4 },
+  // ——— Equipment rent: per day, capped at the weekly price ———
+  { id: "r-bcd", category: "rental", name: "BCD", unit: "per day", duration: "Day or week", short: "Jacket-style, sizes XS–XXL.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 10, price: 500, priceWeekEur: 50, priceWeek: 2400 },
+  { id: "r-suit", category: "rental", name: "Wetsuit", unit: "per day", duration: "Day or week", short: "3 mm or 5 mm — choose 5 mm in winter.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 10, price: 500, priceWeekEur: 50, priceWeek: 2400 },
+  { id: "r-reg", category: "rental", name: "Regulator", unit: "per day", duration: "Day or week", short: "1st & 2nd stage, octopus, SPG.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 10, price: 500, priceWeekEur: 50, priceWeek: 2400 },
+  { id: "r-torch", category: "rental", name: "Torch", unit: "per day", duration: "Day or week", short: "For night dives and the Canyon.", description: "", includes: [], scene: "night", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 10, price: 500, priceWeekEur: 50, priceWeek: 2400 },
+  { id: "r-mask", category: "rental", name: "Mask & snorkel", unit: "per day", duration: "Day or week", short: "Also for snorkellers.", description: "", includes: [], scene: "pools", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 10, price: 500, priceWeekEur: 50, priceWeek: 2400 },
+  { id: "r-fins", category: "rental", name: "Fins & boots", unit: "per day", duration: "Day or week", short: "Open-heel fins with boots.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 5, price: 250, priceWeekEur: 25, priceWeek: 1200 },
+  { id: "r-hoodie", category: "rental", name: "Hoodie", unit: "per day", duration: "Day or week", short: "Neoprene hood for cooler months.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 5, price: 250, priceWeekEur: 25, priceWeek: 1200 },
+  { id: "r-weights", category: "rental", name: "Weights & belt", unit: "per day", duration: "Day or week", short: "Belt with your weights.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 10, price: 500, priceWeekEur: 40, priceWeek: 1900 },
+  { id: "r-buoy", category: "rental", name: "Freediving buoy", unit: "per day", duration: "Day or week", short: "Buoy and line for freediving.", description: "", includes: [], scene: "pools", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 10, price: 500, priceWeekEur: 40, priceWeek: 1900 },
+  { id: "r-snorkel", category: "rental", name: "Snorkeling gear", unit: "per day", duration: "Day or week", short: "Mask, snorkel and fins.", description: "", includes: [], scene: "pools", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 15, price: 700, priceWeekEur: 60, priceWeek: 2900 },
+  { id: "r-full", category: "rental", name: "Full scuba set", unit: "per day", duration: "Day or week", short: "BCD, regulator, wetsuit, mask, fins, weights. (Estimate — not on the printed list.)", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 40, price: 1900, priceWeekEur: 180, priceWeek: 8600 },
+  { id: "r-comp", category: "rental", name: "Dive computer", unit: "per day", duration: "Day or week", short: "Air & Nitrox compatible. (Estimate)", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 10, price: 500, priceWeekEur: 50, priceWeek: 2400 },
+  { id: "r-cam", category: "rental", name: "Action camera + housing", unit: "per day", duration: "Day or week", short: "Film your own reel underwater. (Estimate)", description: "", includes: [], scene: "turtle", requiresConsent: false, slots: ["08:00"], capacity: 20, priceEur: 20, price: 950, priceWeekEur: 100, priceWeek: 4800 },
+  { id: "r-tank", category: "rental", name: "Extra tank — Air 15 L / Nitrox", unit: "per tank", duration: "Per tank", short: "Extra special gases: Air 15 L or Nitrox.", description: "", includes: [], scene: "gear", requiresConsent: false, slots: ["08:00"], capacity: 40, variants: [{"id": "air15", "label": "Air 15 L", "eur": 15, "egp": 700}, {"id": "nitrox", "label": "Nitrox (NTRX)", "eur": 20, "egp": 950}], priceEur: 15, price: 700 },
 
   // ——— Add-ons (offered in the trip cart) ———
-  { id: "t-sharm", category: "addon", name: "Sharm El Sheikh airport transfer", price: 2500, unit: "per car, one way", duration: "About 1.5 hours", short: "Private car between Sharm airport and your hotel in Dahab.", description: "", includes: ["Up to 4 people", "Meet and greet"], scene: "sinai", requiresConsent: false, slots: ["Any time"], capacity: 10 },
-  { id: "t-hotel", category: "addon", name: "Hotel pick-up and drop-off", price: 150, unit: "per person", duration: "In Dahab", short: "We collect you from your hotel or camp in Dahab.", description: "", includes: [], scene: "lagoon", requiresConsent: false, slots: ["Any time"], capacity: 40 },
-  { id: "photos", category: "addon", name: "Photo and video package", price: 1500, unit: "per booking", duration: "Delivered within 48 h", short: "All the photos and clips our team takes of you, in full quality.", description: "", includes: ["Edited reel", "All photos in full resolution"], scene: "turtle", requiresConsent: false, slots: ["Any time"], capacity: 99 },
-  { id: "lunch", category: "addon", name: "Beach lunch", price: 350, unit: "per person", duration: "Dive days", short: "Lunch at a beach café between dives.", description: "", includes: [], scene: "pools", requiresConsent: false, slots: ["Any time"], capacity: 40 }
+  { id: "t-sharm", category: "addon", name: "Sharm El Sheikh airport transfer", price: 2100, priceEur: 45, unit: "per car, one way", duration: "About 1.5 hours", short: "Private car between Sharm airport and your hotel in Dahab.", description: "", includes: ["Up to 4 people", "Meet and greet"], scene: "sinai", requiresConsent: false, slots: ["Any time"], capacity: 10 },
+  { id: "t-hotel", category: "addon", name: "Hotel pick-up and drop-off", price: 150, priceEur: 3, unit: "per person", duration: "In Dahab", short: "We collect you from your hotel or camp in Dahab.", description: "", includes: [], scene: "lagoon", requiresConsent: false, slots: ["Any time"], capacity: 40 },
+  { id: "photos", category: "addon", name: "Photo and video package", price: 1400, priceEur: 30, unit: "per booking", duration: "Delivered within 48 h", short: "All the photos and clips our team takes of you, in full quality.", description: "", includes: ["Edited reel", "All photos in full resolution"], scene: "turtle", requiresConsent: false, slots: ["Any time"], capacity: 99 },
+  { id: "lunch", category: "addon", name: "Beach lunch", price: 400, priceEur: 8, unit: "per person", duration: "Dive days", short: "Lunch at a beach café between dives.", description: "", includes: [], scene: "pools", requiresConsent: false, slots: ["Any time"], capacity: 40 }
 ].map((x, i) => s({ mediaUrl: SERVICE_STOCK[(x as Service).id], ...(x as Service) }, i));
 
 export const CATEGORY_LABEL: Record<string, string> = {
@@ -137,7 +108,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ownerPhone: "+20 100 051 5039",
   ownerEmail: "",
   depositPct: 25,
-  rates: { USD: 50, EUR: 58 },
+  rates: { USD: 48, EUR: 56 },
   photoPackagePrice: 1500,
   pixelId: "",
   ga4Id: "",

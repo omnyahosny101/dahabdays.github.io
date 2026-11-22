@@ -203,7 +203,7 @@ export function Heading({ kicker, title, children, light = false }: { kicker?: s
 /* ---------- Service card + detail sheet ---------- */
 export function ServiceCard({ s, onOpen, i = 0 }: { s: Service; onOpen: (s: Service) => void; i?: number }) {
   const tilt = useTilt<HTMLElement>();
-  const { t, money, sv } = useI18n();
+  const { t, money, sv, from } = useI18n();
   const L = sv(s);
   return (
     <article ref={tilt} className="card group flex flex-col" data-reveal style={{ ["--d" as string]: `${(i % 4) * 90}ms` }}>
@@ -217,7 +217,7 @@ export function ServiceCard({ s, onOpen, i = 0 }: { s: Service; onOpen: (s: Serv
         <p className="text-ink/70">{L.short}</p>
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink/60"><span className="flex items-center gap-1.5"><Clock size={15} />{s.duration}</span>{s.minAge && <span className="flex items-center gap-1.5"><Users size={15} />Age {s.minAge}+</span>}</div>
         <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-          <p><span className="price font-display text-2xl font-black text-navy">{money(s.price)}</span><span className="block text-sm text-ink/55">{t(s.unit)}</span></p>
+          <p>{!!s.variants?.length && <span className="block text-xs font-semibold uppercase tracking-wide text-ink/50">{t("from")}</span>}<span className="price font-display text-2xl font-black text-navy">{money(from(s))}</span><span className="block text-sm text-ink/55">{t(s.unit)}</span></p>
           <BookButton id={s.id} />
         </div>
       </div>
@@ -249,9 +249,15 @@ export function Sheet({ open, onClose, children, wide = false }: { open: boolean
   );
 }
 
+export function PriceNote({ s }: { s: Service }) {
+  const { t, market } = useI18n();
+  return <p className="text-sm text-ink/60">{t(market === "eg" ? "Egyptian & resident prices — please bring your ID or residency to the center." : "International prices in euro. You pay in Egyptian pounds at today's rate.")}{" "}{s.category === "fun" ? t("Taxi from the center to the dive site is included. Nature reserve fees are not included.") : s.category === "course" ? t("Courses include the full equipment.") : s.category === "rental" && s.priceWeekEur ? t("Weekly price applied automatically.") : ""}</p>;
+}
+
 export function ServiceDetail({ s, onClose }: { s: Service | null; onClose: () => void }) {
-  const { t, money, sv } = useI18n();
-  useEffect(() => { if (s) track("ViewContent", { id: s.id, name: s.name, value: s.price }); }, [s]);
+  const { t, money, sv, from, unit, market, eurRate } = useI18n();
+  useEffect(() => { if (s) track("ViewContent", { id: s.id, name: s.name, value: from(s) }); }, [s]);
+  const groups = s?.variants?.length ? [...new Set(s.variants.map((v) => v.group || ""))] : [];
   return (
     <Sheet open={!!s} onClose={onClose}>
       {s && <>
@@ -261,7 +267,10 @@ export function ServiceDetail({ s, onClose }: { s: Service | null; onClose: () =
           <p className="text-[17px] text-ink/75">{sv(s).name !== s.name ? sv(s).short : s.description || s.short}</p>
           {s.includes.length > 0 && <ul className="grid gap-2 sm:grid-cols-2">{s.includes.map((x, k) => <li key={x} className="flex gap-2.5"><span className="mt-1 shrink-0"><Phase i={k} size={14} /></span>{x}</li>)}</ul>}
           <div className="flex flex-wrap gap-2 text-sm">{s.slots.map((x) => <span key={x} className="chip bg-foam text-sea">{t("Starts")} {x}</span>)}{s.requiresConsent && <span className="chip bg-sand text-ink">{t("Medical form required")}</span>}</div>
-          <div className="flex items-center justify-between gap-4 border-t pt-5"><p><span className="price font-display text-3xl font-black text-navy">{money(s.price)}</span> <span className="text-ink/55">{t(s.unit)}</span></p><BookButton id={s.id} label="Book this" className="btn-coral" /></div>
+          {groups.length > 0 && <div className="overflow-hidden rounded-2xl border border-navy/10">{groups.map((g) => <div key={g}>{g && <p className="bg-foam px-4 py-2 text-sm font-bold text-navy">{t(g)}</p>}<ul className="divide-y">{s.variants!.filter((v) => (v.group || "") === g).map((v) => <li key={v.id} className="flex items-center justify-between gap-3 px-4 py-2.5"><span className={v.id.includes("attar") ? "font-semibold text-royal" : ""}>{(() => { const x = t(g ? v.label.replace(g + " · ", "") : v.label); return x.charAt(0).toUpperCase() + x.slice(1); })()}</span><b className="price shrink-0">{money(unit(s, v.id))}</b></li>)}</ul></div>)}</div>}
+          {s.category === "rental" && s.priceWeekEur != null && <p className="rounded-2xl bg-foam px-4 py-3"><b className="price">{money(unit(s))}</b> {t("per day")} · <b className="price">{money(market === "eg" ? s.priceWeek || 0 : Math.round(s.priceWeekEur * eurRate))}</b> {t("per week")}</p>}
+          <PriceNote s={s} />
+          <div className="flex items-center justify-between gap-4 border-t pt-5"><p>{!!s.variants?.length && <span className="text-sm text-ink/55">{t("from")} </span>}<span className="price font-display text-3xl font-black text-navy">{money(from(s))}</span> <span className="text-ink/55">{t(s.unit)}</span></p><BookButton id={s.id} label="Book this" className="btn-coral" /></div>
         </div>
       </>}
     </Sheet>

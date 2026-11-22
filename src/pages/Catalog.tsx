@@ -4,7 +4,7 @@ import { BookButton, ContactList, Empty, Heading, ServiceCard, ServiceDetail, Sh
 import Scene from "../components/Scene";
 import { HandNote, Mark, Phase, RedTab, Stamp, Wave } from "../components/brand";
 import { STOCK, STOCK_GALLERY } from "../lib/stock";
-import { useI18n } from "../lib/i18n";
+import {useI18n, MarketToggle } from "../lib/i18n";
 import { egp, useStore } from "../lib/store";
 import type { Category, MediaItem, SceneKey, Service } from "../lib/types";
 
@@ -29,7 +29,7 @@ export default function Catalog({ category }: { category: Exclude<Category, "add
     <>
       <section className="relative isolate flex min-h-[62svh] items-end overflow-hidden bg-navy pt-[68px] text-white">
         <div className="absolute inset-0 -z-10"><Visual scene={page.scene} url={page.img} animate label={page.kicker} /><div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/40 to-transparent" /></div>
-        <div className="wrap pb-12"><RedTab className="reveal">{t(page.kicker)}</RedTab><h1 className="reveal mt-4 max-w-3xl text-[40px] leading-[1.04] sm:text-[62px]" style={{ animationDelay: ".08s" }}><span className="font-black">{t(page.title.split("|")[0])}</span> <span className="font-black text-sun">{t(page.title.split("|")[1])}</span></h1><p className="reveal mt-4 max-w-2xl text-[18px] text-white/80" style={{ animationDelay: ".16s" }}>{page.lead}</p></div>
+        <div className="wrap pb-12"><RedTab className="reveal">{t(page.kicker)}</RedTab><h1 className="reveal mt-4 max-w-3xl text-[40px] leading-[1.04] sm:text-[62px]" style={{ animationDelay: ".08s" }}><span className="font-black">{t(page.title.split("|")[0])}</span> <span className="font-black text-sun">{t(page.title.split("|")[1])}</span></h1><p className="reveal mt-4 max-w-2xl text-[18px] text-white/80" style={{ animationDelay: ".16s" }}>{page.lead}</p><MarketToggle className="reveal mt-6 max-w-md" /></div>
       </section>
 
       {category === "rental" ? <Rentals list={list} /> : (
@@ -76,14 +76,15 @@ function Promise() {
 function Rentals({ list }: { list: Service[] }) {
   const full = list.find((s) => s.id === "r-full");
   const rest = list.filter((s) => s !== full);
+  const { t, money, unit, line, from } = useI18n();
   return (
     <section className="band bg-foam">
       <div className="wrap grid gap-8 lg:grid-cols-[1fr_1.2fr]">
-        {full && <div className="card self-start"><div className="aspect-[4/3]"><Visual scene={full.scene} url={full.mediaUrl} label={full.name} /></div><div className="p-6"><span className="chip bg-coral text-white">{full.badge}</span><h2 className="mt-3 text-2xl font-extrabold">{full.name}</h2><p className="mt-2 text-ink/70">{full.description}</p><ul className="mt-4 grid grid-cols-2 gap-2">{full.includes.map((i) => <li key={i} className="flex gap-2 text-sm"><Check size={16} className="shrink-0 text-lagoon" />{i}</li>)}</ul><div className="mt-6 flex items-center justify-between"><p><span className="price text-3xl font-extrabold text-sea">{egp(full.price)}</span> <span className="text-ink/55">{full.unit}</span></p><BookButton id={full.id} label="Reserve" className="btn-coral" /></div></div></div>}
+        {full && <div className="card self-start"><div className="aspect-[4/3]"><Visual scene={full.scene} url={full.mediaUrl} label={full.name} /></div><div className="p-6"><span className="chip bg-coral text-white">{full.badge}</span><h2 className="mt-3 text-2xl font-extrabold">{full.name}</h2><p className="mt-2 text-ink/70">{full.description}</p><ul className="mt-4 grid grid-cols-2 gap-2">{full.includes.map((i) => <li key={i} className="flex gap-2 text-sm"><Check size={16} className="shrink-0 text-lagoon" />{i}</li>)}</ul><div className="mt-6 flex items-center justify-between"><p><span className="price text-3xl font-extrabold text-sea">{money(unit(full))}</span> <span className="text-ink/55">{t("per day")}{full.priceWeekEur != null ? <> · <b className="price">{money(line(full, { people: 1, days: 7 }))}</b> {t("per week")}</> : null}</span></p><BookButton id={full.id} label="Reserve" className="btn-coral" /></div></div></div>}
         <div className="card">
           <div className="flex items-center gap-2 border-b p-6"><Wrench className="text-sea" /><h2 className="text-xl font-bold">Single items</h2></div>
           <ul className="divide-y">
-            {rest.filter((s) => s.category === "rental").map((s) => <li key={s.id} className="flex flex-wrap items-center gap-4 p-5"><span className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl"><Visual scene={s.scene} url={s.mediaUrl} label={s.name} /></span><span className="min-w-[10rem] flex-1"><span className="block font-semibold">{s.name}</span><span className="text-sm text-ink/60">{s.short}</span></span><span className="text-right"><span className="price block font-bold text-sea">{egp(s.price)}</span><span className="text-xs text-ink/55">{s.unit}</span></span><BookButton id={s.id} label="Reserve" className="btn-ghost" /></li>)}
+            {rest.filter((s) => s.category === "rental").map((s) => <li key={s.id} className="flex flex-wrap items-center gap-4 p-5"><span className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl"><Visual scene={s.scene} url={s.mediaUrl} label={s.name} /></span><span className="min-w-[10rem] flex-1"><span className="block font-semibold">{s.name}</span><span className="text-sm text-ink/60">{s.short}</span></span><span className="text-right"><span className="price block font-bold text-sea">{s.variants?.length ? t("from") + " " : ""}{money(from(s))}</span><span className="text-xs text-ink/55">{s.priceWeekEur != null ? `${t("per day")} · ${money(line(s, { people: 1, days: 7 }))} ${t("per week")}` : t(s.unit)}</span></span><BookButton id={s.id} label="Reserve" className="btn-ghost" /></li>)}
           </ul>
         </div>
       </div>

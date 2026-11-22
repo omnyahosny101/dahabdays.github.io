@@ -6,7 +6,7 @@ import { HandNote, Phase, PhaseLoader, PhaseSteps, RedTab, Stamp } from "../comp
 import { CATEGORY_LABEL } from "../lib/catalog";
 import { consentPdf, pdfName } from "../lib/pdf";
 import { bookingRef, egp, go, today, uid, useStore, type CartItem } from "../lib/store";
-import { useI18n } from "../lib/i18n";
+import { MarketToggle, useI18n } from "../lib/i18n";
 import { track } from "../lib/analytics";
 import type { Booking, Consent, Promo, Service } from "../lib/types";
 import { DEMO_GUEST, drawSignature } from "../lib/showcase";
@@ -14,7 +14,6 @@ import { MEDICAL_QUESTIONS, ACKNOWLEDGEMENTS } from "../lib/catalog";
 import { Sparkles } from "lucide-react";
 
 const gatewayFee = (amount: number, pct: number, fixed: number) => (amount > 0 ? Math.round((amount * pct) / 100 + fixed) : 0);
-const lineTotal = (s: Service, it: CartItem) => s.price * it.people * (s.category === "rental" ? it.days : 1);
 
 /** Keep the visitor's own order in this tab so the confirmation page works even when the database hides bookings from the public. */
 function remember(bs: Booking[], consents?: Consent[]) {
@@ -32,7 +31,8 @@ export function validPromo(promos: Promo[], code: string): Promo | null {
 
 export default function Book() {
   const { services, selected, settings, backend, put, cart, setCart, promos, seatsTaken } = useStore();
-  const { t, money, sv } = useI18n();
+  const { t, money, sv, line, from, unit, market, eurRate, vlabel } = useI18n();
+  const lineTotal = (s: Service, it: CartItem) => line(s, it);
   const active = services.filter((s) => s.active);
   const bookable = active.filter((s) => s.category !== "addon");
   const addons = active.filter((s) => s.category === "addon");
@@ -45,6 +45,8 @@ export default function Book() {
   const [time, setTime] = useState(ed?.slots[0] || "09:00");
   const [people, setPeople] = useState(1);
   const [days, setDays] = useState(1);
+  const [variant, setVariant] = useState<string | undefined>(() => ed?.variants?.[0]?.id);
+  useEffect(() => { if (ed && !ed.variants?.some((v) => v.id === variant)) setVariant(ed.variants?.[0]?.id); }, [ed]); // eslint-disable-line
   const [remote, setRemote] = useState<Record<string, number> | null>(null);
   useEffect(() => { if (ed && !ed.slots.includes(time)) setTime(ed.slots[0]); }, [ed, time]);
   useEffect(() => { setRemote(null); if (ed && backend?.seats) backend.seats(ed.id, date).then(setRemote).catch(() => {}); }, [ed, date, backend]);
@@ -77,8 +79,8 @@ export default function Book() {
     if (!ed) return false;
     if (!date || date < today()) { setErr("Choose a date from today onwards."); return false; }
     if (left(time) < people) { setErr(`Only ${left(time)} place${left(time) === 1 ? "" : "s"} left at ${time}. Pick another time or date.`); return false; }
-    setCart([...cart, { key: uid(), serviceId: ed.id, date, time, people, days }]); setErr("");
-    track("AddToCart", { id: ed.id, name: ed.name, value: lineTotal(ed, { key: "", serviceId: ed.id, date, time, people, days }) });
+    setCart([...cart, { key: uid(), serviceId: ed.id, date, time, people, days, variant }]); setErr("");
+    track("AddToCart", { id: ed.id, name: ed.name, value: lineTotal(ed, { key: "", serviceId: ed.id, date, time, people, days, variant }) });
     return true;
   };
   const toggleAddon = (a: Service) => {
@@ -115,7 +117,8 @@ export default function Book() {
         const s = svc(it.serviceId); const line = lineTotal(s, it);
         const share = subtotal ? line / subtotal : 0; const d = Math.round(discount * share); const tot = line - d;
         return {
-          id: uid(), ref, orderId, serviceId: s.id, serviceName: s.name, category: s.category, date: it.date, time: it.time, people: it.people,
+          id: uid(), ref, orderId, serviceId: s.id, serviceName: s.name + (s.variants?.length ? " — " + (s.variants.find((v) => v.id === it.variant) || s.variants[0]).label : ""), category: s.category, date: it.date, time: it.time, people: it.people,
+          variant: it.variant, market, ...(market === "intl" ? { fxRate: Math.round(eurRate * 100) / 100 } : {}),
           ...(s.category === "rental" ? { days: it.days } : {}), total: tot, discount: d || undefined, promo: promo?.code,
           customer: cust, notes, gear: ["course", "fun", "rental"].includes(s.category) ? gear : undefined,
           status: plan === "later" ? "confirmed" : "pending",
@@ -165,10 +168,11 @@ export default function Book() {
           <div className="mb-8"><PhaseSteps steps={steps} active={step} /></div>
 
           {name === "trip" && <div className="space-y-8">
+            <MarketToggle />
             {items.length > 0 && <ul className="space-y-2">
               {items.map((it, i) => { const s = svc(it.serviceId); return (
                 <li key={it.key} className="flex flex-wrap items-center gap-3 rounded-2xl bg-foam p-3">
-                  <Phase i={i} size={18} /><span className="min-w-[10rem] flex-1"><b>{sv(s).name}</b><span className="block text-sm text-ink/60">{it.date} · {it.time} · {it.people} {s.category === "rental" ? `× ${it.days}d` : t("People").toLowerCase()}</span></span>
+                  <Phase i={i} size={18} /><span className="min-w-[10rem] flex-1"><b>{sv(s).name}</b>{s.variants?.length ? <span className="block text-sm font-semibold text-royal">{vlabel(s, it.variant)}</span> : null}<span className="block text-sm text-ink/60">{it.date} · {it.time} · {it.people} {s.category === "rental" ? `× ${it.days}d` : t("People").toLowerCase()}</span></span>
                   <span className="price font-bold">{money(lineTotal(s, it))}</span>
                   <button className="btn px-2 text-ink/50 hover:text-red" aria-label="Remove" onClick={() => setCart(cart.filter((c) => c.key !== it.key))}><Trash2 size={16} /></button>
                 </li>); })}
@@ -177,8 +181,10 @@ export default function Book() {
             <div className="space-y-5 rounded-[24px] border-2 border-navy/10 p-4 sm:p-5">
               <p className="font-display font-black">{items.length ? t("Add another activity") : t("Program")}</p>
               <select className="input" value={sid} onChange={(e) => setSid(e.target.value)}>
-                {(["course", "fun", "tour", "rental"] as const).map((c) => <optgroup key={c} label={t(CATEGORY_LABEL[c])}>{bookable.filter((s) => s.category === c).map((s) => <option key={s.id} value={s.id}>{sv(s).name} — {money(s.price)}</option>)}</optgroup>)}
+                {(["course", "fun", "tour", "rental"] as const).map((c) => <optgroup key={c} label={t(CATEGORY_LABEL[c])}>{bookable.filter((s) => s.category === c).map((s) => <option key={s.id} value={s.id}>{sv(s).name} — {s.variants?.length ? t("from") + " " : ""}{money(from(s))}</option>)}</optgroup>)}
               </select>
+              {ed.variants?.length ? <label className="block"><span className="label">{t("Price option")}</span>
+                <select className="input" value={variant} onChange={(e) => setVariant(e.target.value)}>{[...new Set(ed.variants.map((v) => v.group || ""))].map((g) => { const opts = ed.variants!.filter((v) => (v.group || "") === g).map((v) => <option key={v.id} value={v.id}>{t(v.label)} — {money(unit(ed, v.id))}</option>); return g ? <optgroup key={g} label={g}>{opts}</optgroup> : opts; })}</select></label> : null}
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block"><span className="label">{t("Start date")}</span><input type="date" className="input" min={today()} value={date} onChange={(e) => setDate(e.target.value)} /></label>
                 <div><span className="label">{t("Start time")}</span><div className="flex flex-wrap gap-2">{ed.slots.map((s) => { const l = left(s); return (
@@ -189,7 +195,7 @@ export default function Book() {
                 {ed.category === "rental" && <Stepper label={t("Days")} v={days} set={setDays} max={30} />}
               </div>
               <p className="text-ink/70">{sv(ed).short} {ed.minAge ? `· ${t("Age")} ${ed.minAge}+` : ""}</p>
-              <button className="btn-sea" onClick={addItem}><Plus size={18} /> {t("Add to trip")} · {money(lineTotal(ed, { key: "", serviceId: ed.id, date, time, people, days }))}</button>
+              <button className="btn-sea" onClick={addItem}><Plus size={18} /> {t("Add to trip")} · {money(lineTotal(ed, { key: "", serviceId: ed.id, date, time, people, days, variant }))}</button>
             </div>
 
             {items.length > 0 && addons.length > 0 && <div>
@@ -197,7 +203,7 @@ export default function Book() {
               <div className="grid gap-3 sm:grid-cols-2">{addons.map((a) => { const on = cart.some((c) => c.serviceId === a.id); return (
                 <label key={a.id} className={`flex cursor-pointer gap-3 rounded-2xl border-2 p-4 transition ${on ? "border-sky bg-sky/5" : "border-navy/10"}`}>
                   <input type="checkbox" className="mt-1 h-5 w-5 accent-[#15284B]" checked={on} onChange={() => toggleAddon(a)} />
-                  <span><b className="block">{sv(a).name}</b><span className="text-sm text-ink/60">{sv(a).short}</span><span className="mt-1 block text-sm font-bold">{money(a.price)} <span className="font-normal text-ink/50">{a.unit}</span></span></span>
+                  <span><b className="block">{sv(a).name}</b><span className="text-sm text-ink/60">{sv(a).short}</span><span className="mt-1 block text-sm font-bold">{money(unit(a))} <span className="font-normal text-ink/50">{t(a.unit)}</span></span></span>
                 </label>); })}</div>
             </div>}
           </div>}
@@ -258,8 +264,10 @@ export default function Book() {
             <div className="flex justify-between"><dt>{t("Subtotal")}</dt><dd className="price">{money(subtotal)}</dd></div>
             {discount > 0 && <div className="flex justify-between text-[#0b7a52]"><dt>{t("Discount")} ({promo?.code})</dt><dd className="price">−{money(discount)}</dd></div>}
             <div className="flex items-end justify-between pt-2"><dt className="font-semibold">{t("Total")}</dt><dd className="price font-display text-3xl font-black text-navy">{money(total)}</dd></div>
+            {market === "intl" && total > 0 && <div className="flex justify-between text-xs text-ink/55"><dt>{t("Charged in Egyptian pounds")}</dt><dd className="price">{egp(name === "review" && plan !== "full" ? dueNow : total)}</dd></div>}
             {name === "review" && plan !== "full" && <><div className="flex justify-between"><dt>{t("Due now")}</dt><dd className="price font-bold">{money(dueNow)}</dd></div><div className="flex justify-between text-ink/60"><dt>{t("Due on arrival")}</dt><dd className="price">{money(total - dueNow)}</dd></div></>}
           </dl>
+          <p className="mt-3 text-xs text-ink/55">{t(market === "eg" ? "Egyptian & resident prices — please bring your ID or residency to the center." : "International prices in euro. You pay in Egyptian pounds at today's rate.")}{items.some((it) => svc(it.serviceId).category === "fun") ? " " + t("Taxi from the center to the dive site is included. Nature reserve fees are not included.") : ""}</p>
           <p className="mt-6"><HandNote>{t("No hidden extras — gear included.")}</HandNote></p>
           <a href={"https://wa.me/" + settings.whatsapp} target="_blank" rel="noreferrer" className="btn-ghost mt-6 w-full"><MessageCircle size={18} /> {t("Questions? WhatsApp us")}</a>
         </aside>
